@@ -1,4 +1,4 @@
-# Functies ----
+# simuleerLening ----
 simuleerLening <- function(leningTotaalEuro,
                            percentJaar, 
                            jaar,
@@ -18,12 +18,12 @@ simuleerLening <- function(leningTotaalEuro,
                               afkoopjaar),
                  kenmerken = variabelen))
   else if(grep("variabel", type) == 1){
-    verdubbeljaar <- as.numeric(gsub("variabel", "", type))
+    verdubbelJaar <- as.numeric(gsub("variabel", "", type))
     return(list(aflostabel = simuleerLeningVariabel(leningTotaalEuro,
                                                     percentJaar, 
                                                     jaar,
                                                     afkoopjaar,
-                                                    verdubbeljaar),
+                                                    verdubbelJaar),
                 kenmerken = variabelen))
   }
 }
@@ -52,21 +52,20 @@ simuleerLeningVast <- function(leningTotaalEuro,
     previouslyCalculated <- data.table()
   }
   
+  percentMaand <- (1+percentJaar)^(1/12) - 1
+  
   if(dim(previouslyCalculated)[1] == 1){
-    percentMaand <- (1+percentJaar)^(1/12) - 1
     aflostabelMid <- simuleerAflossingTabelVast(leningTotaalEuro,
                                                 percentMaand, 
                                                 jaar,
                                                 previouslyCalculated$aflossingMaand)
+    mid <- previouslyCalculated$aflossingMaand
   } else {
-    
-    
     # Maandelijkse aflossing zoeken
     min <- leningTotaalEuro/(jaar * 12)
     max <- leningTotaalEuro*(1+percentJaar)^jaar/(jaar*12) * 1.5
     mid <- (min + max)/2
     
-    percentMaand <- (1+percentJaar)^(1/12) - 1
     
     repeat{
       # Aflossingen mid
@@ -76,12 +75,12 @@ simuleerLeningVast <- function(leningTotaalEuro,
                                                   mid)
       
       # Check open
-      open <- aflostabelMid[jaar*12+1]$open
-      if(open < 0.01 && open > 0)
+      lening_open <- aflostabelMid[jaar*12]$lening_open
+      if(lening_open < 0.01 && lening_open > 0)
         break()
       
       dum <- mid
-      if(open < 0){
+      if(lening_open < 0){
         if(mid == (min+mid)/2)
           break()
         mid <- (min+mid)/2
@@ -95,6 +94,7 @@ simuleerLeningVast <- function(leningTotaalEuro,
       
     }
     
+    # Oplossing opslaan in maandelijkseAflossing tabel
     maandelijkseAflossing <- rbind(maandelijkseAflossing, data.table(
       leningTotaalEuro = leningTotaalEuro,
       percentJaar = percentJaar,
@@ -103,6 +103,13 @@ simuleerLeningVast <- function(leningTotaalEuro,
     
     save(maandelijkseAflossing, file = file)
   }
+
+  # Afronden op 1 cent naar boven en aflossingstabel opnieuw berekenen
+  mid <- round(mid,2)
+  aflostabelMid <- simuleerAflossingTabelVast(leningTotaalEuro,
+                                              percentMaand, 
+                                              jaar,
+                                              mid, opkuis = TRUE)
   
   aflostabelMid <- afkopen(aflostabelMid, percentJaar, afkoopjaar)
   
@@ -112,7 +119,8 @@ simuleerLeningVast <- function(leningTotaalEuro,
 # Simuleer lening Variabel ----
 simuleerLeningVariabel <- function(leningTotaalEuro,
                                    percentJaar, 
-                                   jaar, afkoopjaar = 0, 
+                                   jaar, 
+                                   afkoopjaar = 0, 
                                    verdubbelJaar = 3){
   
   if(is.na(afkoopjaar))
@@ -123,17 +131,17 @@ simuleerLeningVariabel <- function(leningTotaalEuro,
   vast1 <- simuleerLeningVast(leningTotaalEuro,
                               percentJaar, 
                               jaar)
-  # Na 3 jaar herziening
-  if(jaar <= verdubbelJaar || afkoopjaar <= verdubbelJaar){
-    totaalVar <- afkopen(vast1, percentJaar, afkoopjaar)
+  # Na "verdubbelJaar" jaar herziening
+  if(jaar <= verdubbelJaar || (afkoopjaar > 0 && afkoopjaar <= verdubbelJaar)){
+    vast1 <- afkopen(vast1, percentJaar, afkoopjaar)
     return(vast1)
   }
   
-  vast2 <- simuleerLeningVast(vast1[maand == verdubbelJaar*12+1]$open,
+  vast2 <- simuleerLeningVast(vast1[maand == verdubbelJaar*12-1]$lening_open,
                               percentJaar*2, 
                               jaar-verdubbelJaar)
   
-  totaalVar <- rbind(vast1[maand <= verdubbelJaar*12], vast2)
+  totaalVar <- rbind(vast1[maand < verdubbelJaar*12-1], vast2)
   totaalVar$maand <- 1:(dim(totaalVar)[1])
   
   totaalVar <- afkopen(totaalVar, percentJaar*2, afkoopjaar)
@@ -146,14 +154,15 @@ simuleerAflossingTabelVast <- function(leningTotaalEuro,
                               percentMaand, 
                               jaar,
                               aflossingMaand,
-                              type = "vast"){
-  aflossing <- data.table(maand = 0, 
+                              type = "vast",
+                              opkuis = FALSE){
+  aflossing <- data.table(maand = 1, 
                           aflossing = aflossingMaand,
-                          open = leningTotaalEuro, 
-                          interest = leningTotaalEuro*percentMaand)
-  for(mnd in 1:(jaar*12)){
+                          lening_open = leningTotaalEuro-aflossingMaand+leningTotaalEuro*percentMaand, 
+                          lening_kapitaal = aflossingMaand-leningTotaalEuro*percentMaand,
+                          lening_interest = leningTotaalEuro*percentMaand)
+  for(mnd in 2:(jaar*12)){
     vorigeMaand <- aflossing[maand == mnd - 1]
-    open <- vorigeMaand$open + vorigeMaand$interest - vorigeMaand$aflossing
     if(!type == "vast"){
       if(mnd == 3*12){
         percentMaand <- ((1+percentMaand)^12 + 0.01)^(1/12)-1
@@ -161,15 +170,25 @@ simuleerAflossingTabelVast <- function(leningTotaalEuro,
       if(mnd == 6*12)
         percentMaand <- (1+((1+percentMaand)^12-1)*2)^(1/12)-1
     }
+    lening_open <- vorigeMaand$lening_open + vorigeMaand$lening_open*percentMaand - aflossingMaand
     aflossing <- rbind(aflossing, data.table(
       maand = mnd, 
       aflossing = aflossingMaand,
-      open = open,
-      interest = open*percentMaand))
+      lening_open = lening_open,
+      lening_kapitaal = aflossingMaand-vorigeMaand$lening_open*percentMaand,
+      lening_interest = vorigeMaand$lening_open*percentMaand))
   }
   
-  # Laatste maand geen aflossing meer
-  aflossing[maand == jaar*12, aflossing := 0]
+  
+  if(opkuis){
+    # Laatste maand aflossing zal de totale lening aflossen
+    aflossing[maand == jaar*12, aflossing := aflossing+lening_open]
+    aflossing[maand == jaar*12, lening_open := 0]
+    aflossing[maand == jaar*12, lening_kapitaal := aflossing-lening_interest]
+    for(col in colnames(aflossing)[-1]){
+      aflossing[[col]] <- round(aflossing[[col]]*100)/100
+    }
+  }
   
   return(aflossing)
 }
@@ -183,11 +202,11 @@ composieteLening <- function(leningTotaalEuro,
   leningen <- paste0("lening", 1:length(leningTotaalEuro))
   for(lening in 1:length(leningTotaalEuro)){
     assign(leningen[lening],
-           value = simuleerLening(leningTotaalEuro[lening],
-                                  percentJaar[lening], 
-                                  jaar[lening],
-                                  type[lening], 
-                                  afkoopjaar[lening])$aflostabel)
+           value = simuleerLening(leningTotaalEuro = leningTotaalEuro[lening],
+                                  percentJaar = percentJaar[lening], 
+                                  jaar = jaar[lening],
+                                  type = type[lening], 
+                                  afkoopjaar = afkoopjaar[lening])$aflostabel)
   }
   
   leningenTotaal <- data.table()
@@ -212,10 +231,10 @@ afkopen <- function(lening, percentJaar, afkoopjaar){
     return(lening)
   
   administratieveBoetePerc <- ((1+percentJaar)^(1/12) - 1)*3
-  open <- lening[maand == afkoopjaar*12-1]$open
+  afkoopsom <- lening[maand == afkoopjaar*12]$lening_open
   
-  lening[maand == afkoopjaar*12, c("open", "interest", "aflossing") := list(0,0,open + open*administratieveBoetePerc)]
-  lening[maand > afkoopjaar*12, c("open", "interest", "aflossing") := list(0,0,0)]
+  lening[maand == afkoopjaar*12, c("lening_open", "lening_interest", "aflossing") := list(0,0,afkoopsom + afkoopsom*administratieveBoetePerc)]
+  lening[maand > afkoopjaar*12, c("lening_open", "lening_interest", "aflossing") := list(0,0,0)]
   
   return(lening)
 }
@@ -247,14 +266,20 @@ vergelijkLeningen <- function(leningen){
     print("    Aflossen:")
     for(aflossingen in unique(lening$aflostabel$aflossing)){
       if(aflossingen > 0)
-        print(paste0("      ", sum(aflossingen == lening$aflostabel$aflossing), " maanden: ", aflossingen, " euro"))
+        print(paste0("      ", 
+                     sum(aflossingen == lening$aflostabel$aflossing), 
+                     " maanden: ", 
+                     round(aflossingen,2), " euro"))
     }
-    print(paste0("    Lening totale kost: ", sum(lening$aflostabel$aflossing) - 150000))
+    print(paste0("    Lening som afbetalingen: ", 
+                 round(sum(lening$aflostabel$aflossing) - 150000),2))
     
     maandInflatie <- (1+0.02)^(1/12) - 1
     inflatieProduct <- (1/(1+maandInflatie)^lening$aflostabel$maand)
     
-    print(paste0("    Lening totale kost met inflatie 2%/jaar: ", sum(lening$aflostabel$aflossing*inflatieProduct) - 150000))
+    print(paste0("    Lening som afbetalingen met correctie voor inflatie 2%/jaar: ", 
+                 round(sum(lening$aflostabel$aflossing*inflatieProduct) - 150000,2), 
+                 " euro"))
     print("")
   }
 }
@@ -270,7 +295,7 @@ investeringen <- function(aflossingsTabel,
   maandOpbrengst <- (1+gemiddeldeOpbrengstJaar)^(1/12) - 1
   maandInflatie <- (1+0.02)^(1/12) - 1
   
-  startKapitaal <- vermogenVoorAankoop + aflossingsTabel$open[1] - totaalKosten
+  startKapitaal <- vermogenVoorAankoop + aflossingsTabel$lening_open[1] - totaalKosten
   
   totaalVermogen <- data.table(maand = 0,
                                vermogen = startKapitaal,
