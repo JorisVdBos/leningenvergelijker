@@ -2,6 +2,7 @@
 library(shiny)
 library(shinydashboard)
 library(shinyjs)
+library(shinysky)
 
 library(data.table)
 library(DT)

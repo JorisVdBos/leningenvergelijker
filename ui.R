@@ -27,10 +27,70 @@ body <- dashboardBody(
       fluidPage(
         fluidRow(
           h1("Simuleer een lening"),
-          p("Eest een beetje uitleg over de app."),
-          p("Bladibla :)"))
+          p("Een huis of appartement gekocht? Proficiat! Maar hola, de zoektocht is nog niet afgelopen! Een goede lening vinden kan je duizenden euro's besparen, dus een nieuwe zoektocht gaat van start. Algouw ligt je keukentafel vol met papieren met letterlijk duizenden cijfertjes. Bank A geeft een betere rentevoet, maarja bank B heeft dan weer goedkopere verzekeringen! Economisch gezien moet je denken aan inflatie en zo weinig mogelijk lenen, maar fiscaal gezien moet je dan weer zo lang mogelijk lenen. Vriend 1 zegt dit en vriend 2 zegt dat, maar welke lening is nu de beste?"),
+          p("Om leningen te vergelijken begonnen wij een excelbestand waar we alle leningvoorstellen verzamelden. Zelfs met enkele excel functies kregen we moeilijk vat op de waarde van de verschillende voorstellen en moesten we toch nog vaak teruggrijpen naar de aflostabellen van de banken. Daarom schreef ik voor mezelf en mijn partner een programma in de computertaal R dat leningen simuleerde dat leningen kon vergelijken aan de hand van duidelijke criteria. Algauw breidde ik dit uit met zaken zoals inflatie en beleggen omdat ik ook deze in rekening wou brengen. In de hoop dat andere mensen hiermee geholpen zouden worden, schreef ik de applicatie die je momenteel bezoekt!"),
+          p("Hieronder zie je een voorbeeld van een verzameling bankvoorstellen. Aflostabellen en grafieken bekom je door de knop 'Start simulatie' te klikken. In de tab 'nieuwe lening' kan je zelf leningen aan deze tabel toevoegen. Je kan je verzameling bankvoorstellen opslaan en opnieuw inladen zoveel je wilt!"))
         ),
         tabsetPanel(
+          tabPanel(
+            "Opgeslagen leningen",
+            wellPanel(
+              dataTableOutput("leningenDT"),
+              fluidRow(
+                column(
+                  width = 4
+                ),
+                column(
+                  width = 4,
+                  align = "right",
+                  br(),
+                  actionButton(
+                    "leningenVerw",
+                    "Verwijder geselecteerde lening"
+                  ),
+                  br(),
+                  br(),
+                  div(id = "leningenVerwAllesDiv",
+                     actionButton(
+                       "leningenVerwAlles",
+                       "Verwijder alle opgeslagen leningen")
+                  ),
+                  div(id = "leningenVerwAlles2Div",
+                     actionButton(
+                       "leningenVerwAlles2",
+                       "Ben je zeker?",
+                       styleclass = "danger")
+                  )
+                ),
+                column(
+                  width = 4,
+                  align = "left",
+                  fileInput(
+                    "leningenImp",
+                    "Importeer tabel",
+                    multiple = FALSE, 
+                    accept = "RData"
+                  ),
+                  div(id = "leningenImpError",
+                      p(em(HTML("<font color='red'>Gelieve een naam in te voeren.</font>")))),
+                  downloadButton(
+                    "leningenExp",
+                    "Exporteer tabel"
+                  )
+                )
+              ),
+              column(
+                width = 8,
+                align="center",
+                br(),
+                br(),
+                actionButton(
+                  "lenBereken2",
+                  label = "Start simulatie",
+                  styleclass = "success")
+              ))
+          ),
+          
           tabPanel(
             "Nieuwe lening",
             wellPanel(
@@ -47,6 +107,13 @@ body <- dashboardBody(
                   radioButtons("lenVastOfVar",
                                "Variabel of vaste rentevoet",
                                choices = c("Vast", "Variabel")),
+                  div(id = "lenVariabelOptie",
+                      textInput("lenVarType",
+                                "Herziening jaren:",
+                                placeholder = "3"),
+                      div(id = "lenVarTypeError",
+                          em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")),
+                          br())),
                   textInput("lenRV",
                             "Rentevoet in %:",
                             placeholder = "2,5"),
@@ -61,7 +128,7 @@ body <- dashboardBody(
                   br(),
                   actionButton(
                     "lenVoegToe",
-                    "Voeg toe"),
+                    "Voeg toe",styleclass = "warning"),
                   actionButton(
                     "lenLaatsteWeg",
                     "Verwijder laatse invoer"),
@@ -145,7 +212,7 @@ body <- dashboardBody(
                               placeholder = "2.0"),
                     div(id = "lenVermBelOpbrPercError",
                         p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>"))))
-                    )
+                  )
                 )
               )
             ),
@@ -158,8 +225,7 @@ body <- dashboardBody(
                 actionButton(
                   "lenBereken",
                   label = "       Start simulatie",
-                  icon("play"),
-                  style="color: #fff; background-color: #337ab7; border-color: #2e6da4")
+                  styleclass = "success")
               ),
               column(
                 width = 4,
@@ -174,65 +240,6 @@ body <- dashboardBody(
               )
             ),
             "Simulatie output"
-          ),
-          tabPanel(
-            "Opgeslagen leningen",
-            wellPanel(
-              dataTableOutput("leningenDT"),
-              fluidRow(
-                column(
-                  width = 4
-                ),
-                column(
-                  width = 4,
-                  align = "right",
-                  br(),
-                  actionButton(
-                    "leningenVerw",
-                    "Verwijder geselecteerde lening"
-                  ),
-                  br(),
-                  br(),
-                  div(id = "leningenVerwAllesDiv",
-                     actionButton(
-                       "leningenVerwAlles",
-                       "Verwijder alle opgeslagen leningen")
-                  ),
-                  div(id = "leningenVerwAlles2Div",
-                     actionButton(
-                       "leningenVerwAlles2",
-                       "Ben je zeker?",
-                       style = "color: #fff; background-color: #ff0000; border-color: #2e6da4")
-                  )
-                ),
-                column(
-                  width = 4,
-                  align = "left",
-                  fileInput(
-                    "leningenImp",
-                    "Importeer tabel",
-                    multiple = FALSE, 
-                    accept = "RData"
-                  ),
-                  div(id = "leningenImpError",
-                      p(em(HTML("<font color='red'>Gelieve een naam in te voeren.</font>")))),
-                  downloadButton(
-                    "leningenExp",
-                    "Exporteer tabel"
-                  )
-                )
-              ),
-              column(
-                width = 8,
-                align="center",
-                br(),
-                br(),
-                actionButton(
-                  "lenBereken2",
-                  label = "       Start simulatie",
-                  icon("play"),
-                  style="color: #fff; background-color: #337ab7; border-color: #2e6da4")
-              ))
           )
         )
     ),

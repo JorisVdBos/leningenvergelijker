@@ -13,8 +13,13 @@ shinyServer(function(input, output, session) {
     toggle(id = "lenVermdiv", condition = input$vermogenCheck)
   })
   
+  observeEvent(input$lenVastOfVar, {
+    toggle(id = "lenVariabelOptie", condition = input$lenVastOfVar == "Variabel")
+  })
+  
   leningSamenstelling <- data.table(Te_Lenen_Bedrag = numeric(),
                                     Vast_Of_Variabel = character(),
+                                    Variabel_Herziening = numeric(),
                                     Rentevoet = numeric(),
                                     Jaar = numeric())
   observeEvent(input$lenVoegToe, {
@@ -23,6 +28,14 @@ shinyServer(function(input, output, session) {
     
     inputs <- c("lenBedr", "lenRV", "lenJaar")
     errorDivs <- c("lenBedrError", "lenRVError", "lenJaarError")
+    
+    if(input$lenVastOfVar == "Variabel"){
+      inputs <- c(inputs, "lenVarType")
+      errorDivs <- c(errorDivs, "lenVarTypeError")
+    } else {
+      lenVarType <- "Vast"
+    }
+    
     
     for(inp in inputs){
       dum <- 
@@ -52,11 +65,14 @@ shinyServer(function(input, output, session) {
       return(NULL)
     
     # Invoer ok:
+    if(is.numeric(lenVarType))
+      lenVarType <- floor(lenVarType)
     leningSamenstelling <<- 
       rbind(leningSamenstelling, 
             data.table(
               "Te_Lenen_Bedrag" = floor(lenBedr),
               "Vast_Of_Variabel" = input$lenVastOfVar,
+              "Variabel_Herziening" = lenVarType, 
               "Rentevoet" = lenRV,
               "Jaar" = floor(lenJaar)
             ))
@@ -89,7 +105,7 @@ shinyServer(function(input, output, session) {
   
   # Leningen opslaan
   opgeslagenLeningen <- NULL
-  if(file.exists("opgeslagenLeningenVoorbeelden.RData"))
+  if(file.exists("opgeslagenLeningenVoorbeelden.feather"))
     opgeslagenLeningen <- data.table(read_feather(path = "opgeslagenLeningenVoorbeelden.feather"))
   
   observeEvent(input$lenOpslaan, {
@@ -173,6 +189,7 @@ shinyServer(function(input, output, session) {
       "Bank" = input$lenBank,
       "Te_Lenen_Bedrag" = paste(leningSamenstelling$Te_Lenen_Bedrag, collapse = "/"),
       "Vast_Of_Variabel" = paste(leningSamenstelling$Vast_Of_Variabel, collapse = "/"),
+      "Variabel_Herziening" = paste(leningSamenstelling$Variabel_Herziening, collapse = "/"),
       "Rentevoet" = paste(leningSamenstelling$Rentevoet, collapse = "/"),
       "Jaar" = paste(leningSamenstelling$Jaar, collapse = "/"),
       "Kosten_Bijhouden" = input$kostenCheck,
@@ -194,23 +211,24 @@ shinyServer(function(input, output, session) {
   
   toonOpgeslagenLeningen <- function(){
     if(is.null(opgeslagenLeningen) || dim(opgeslagenLeningen)[1] == 0){
-      output$leningenDT <- 
-        renderDataTable(data.table(Lening ="Geen opgeslagen leningen gevonden!"))
-    } else {
-      output$leningenDT <- renderDataTable(opgeslagenLeningen,
+      opgeslagenLeningen <- 
+        data.table(Lening ="Geen opgeslagen leningen gevonden!")
+    }
+    output$leningenDT <- renderDataTable(opgeslagenLeningen,
                                            options=list(paging = FALSE,
                                                         deferRender = FALSE,
                                                         info = FALSE,
-                                                        processing = TRUE,
                                                         searching = FALSE,
                                                         autoWidth = TRUE,
                                                         scrollX=TRUE, 
                                                         pageLength = -1),
                                            rownames = FALSE,
                                            selection = 'single')
-    }
+    
     # Testing:
-    # write_feather(x = opgeslagenLeningen, path = "opgeslagenLeningenVoorbeelden.feather")
+    # if(!is.null(opgeslagenLeningen) &&
+    #    dim(opgeslagenLeningen)[1] > 0)
+    #   write_feather(x = opgeslagenLeningen, path = "opgeslagenLeningenVoorbeelden.feather")
     toggle(id = "leningenVerwAlles2Div", condition = FALSE)
   }
   toonOpgeslagenLeningen()
@@ -257,6 +275,9 @@ shinyServer(function(input, output, session) {
       'LeningenVergelijker.feather'
     },
     content = function(file) {
+      if(is.null(opgeslagenLeningen) || dim(opgeslagenLeningen)[1] == 0)
+        return(NULL)
+      
       write_feather(x = opgeslagenLeningen, path = file)
     }
   )
@@ -266,6 +287,7 @@ shinyServer(function(input, output, session) {
   
   # Toggle off all errorDivs
   for(errorDiv in c("lenBedrError", "lenRVError", "lenJaarError",
+                    "lenVarTypeError",
                     "lenSamError", "lenBankError",
                     "lenKost1Error", "lenKostMError", "lenKostJError", "lenInflError",
                     "lenVermStartError", "lenVermInkError", "lenVermUitError", "lenVermBelPercError",
