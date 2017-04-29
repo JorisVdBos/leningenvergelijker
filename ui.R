@@ -37,10 +37,10 @@ body <- dashboardBody(
               fluidRow(
                 column(
                   width = 6,
-                  textInput("lenTot",
+                  textInput("lenBedr",
                             "Te lenen bedrag in euro:",
                             placeholder = "150000"),
-                  div(id = "lenTotError",
+                  div(id = "lenBedrError",
                       em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")),
                       br()),
                   br(),
@@ -57,7 +57,7 @@ body <- dashboardBody(
                             "Jaar:",
                             placeholder = "25"),
                   div(id = "lenJaarError",
-                      p(em(HTML("<font color='red'> Gelieve een juist getal in te geven.</font>")))),
+                      p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
                   br(),
                   actionButton(
                     "lenVoegToe",
@@ -65,11 +65,16 @@ body <- dashboardBody(
                   actionButton(
                     "lenLaatsteWeg",
                     "Verwijder laatse invoer"),
+                  actionButton(
+                    "lenAllesWeg",
+                    "Verwijder alles"),
                   br(),
                   br(),
                   br(),
                   br(),
-                  dataTableOutput("lenInputDT")
+                  dataTableOutput("lenInputDT"),
+                  div(id = "lenSamError",
+                      p(em(HTML("<font color='red'>Gelieve een leninghoeveelheid in te geven.</font>"))))
                 ),
                 column(
                   width = 6,
@@ -83,14 +88,20 @@ body <- dashboardBody(
                     textInput("lenKost1",
                               "Eenmalige kosten, zoals bijvoorbeeld dossierkosten: ", 
                               placeholder = "500"),
+                    div(id = "lenKost1Error",
+                        p(em(HTML("<font color='red'>Gelieve een juist getalin te geven.</font>")))),
                     textInput("lenKostM", 
                               paste0("Maandlijke kosten, zoals bijvoorbeeld ",
                                      "bankrekeningkosten of schuldsaldo verzekering: "), 
                               placeholder = "162,62"),
+                    div(id = "lenKostMError",
+                        p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
                     textInput("lenKostJ", 
                               paste0("Jaarlijkse kosten, zoals bijvoorbeeld ",
                                      "brandverzekerning: "), 
                               placeholder = "256,3")),
+                  div(id = "lenKostJError",
+                      p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
                   checkboxInput(
                     "inflCheck",
                     "Inflatie", 
@@ -100,6 +111,8 @@ body <- dashboardBody(
                     textInput("lenInfl", 
                               "Inflatie in percent per jaar: ", 
                               placeholder = "2,0")),
+                  div(id = "lenInflError",
+                      p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
                   checkboxInput(
                     "vermogenCheck",
                     "Vermogen bijhouden", 
@@ -109,18 +122,29 @@ body <- dashboardBody(
                     textInput("lenVermStart", 
                               "Vermogen bij start ingang lening:", 
                               placeholder = "20000"),
+                    div(id = "lenVermStartError",
+                        p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
                     textInput("lenVermInk", 
                               "Inkomsten per maand:", 
                               placeholder = "2400"),
+                    div(id = "lenVermInkError",
+                        p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
                     textInput("lenVermUit", 
                               "Uitgaven per maand (de lening niet meegeteld):", 
                               placeholder = "1200"),
+                    div(id = "lenVermUitError",
+                        p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
                     textInput("lenVermBelPerc", 
                               "Percentage van vermogen in beleggingen:", 
+                              value = 0,
                               placeholder = "40"),
+                    div(id = "lenVermBelPercError",
+                        p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
                     textInput("lenVermBelOpbrPerc", 
                               "Opbrengstpercentage van belegd vermogen per jaar:", 
-                              placeholder = "2.0")
+                              placeholder = "2.0"),
+                    div(id = "lenVermBelOpbrPercError",
+                        p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>"))))
                     )
                 )
               )
@@ -142,6 +166,8 @@ body <- dashboardBody(
                 "Deze lening opslaan:",
                 textInput("lenBank",
                           "Naam van de bank:"),
+                div(id = "lenBankError",
+                    p(em(HTML("<font color='red'>Gelieve een naam in te voeren.</font>")))),
                 actionButton(
                   "lenOpslaan",
                   "Opslaan")
@@ -152,7 +178,18 @@ body <- dashboardBody(
           tabPanel(
             "Opgeslagen leningen",
             wellPanel(
-              "2"
+              dataTableOutput("leningenDT"),
+              column(
+                width = 8,
+                align="center",
+                br(),
+                br(),
+                actionButton(
+                  "lenBereken2",
+                  label = "       Start simulatie",
+                  icon("play"),
+                  style="color: #fff; background-color: #337ab7; border-color: #2e6da4")
+              )
             )
           )
         )
