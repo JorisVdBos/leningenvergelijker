@@ -90,7 +90,7 @@ shinyServer(function(input, output, session) {
   # Leningen opslaan
   opgeslagenLeningen <- NULL
   if(file.exists("opgeslagenLeningenVoorbeelden.RData"))
-    load(file = "opgeslagenLeningenVoorbeelden.RData")
+    opgeslagenLeningen <- data.table(read_feather(path = "opgeslagenLeningenVoorbeelden.feather"))
   
   observeEvent(input$lenOpslaan, {
     # Invoer checken:
@@ -198,15 +198,68 @@ shinyServer(function(input, output, session) {
         renderDataTable(data.table(Lening ="Geen opgeslagen leningen gevonden!"))
     } else {
       output$leningenDT <- renderDataTable(opgeslagenLeningen,
-                                           options=list(autoWidth = TRUE,
-                                                        scrollX=TRUE, 
-                                                        paging = FALSE,
+                                           options=list(paging = FALSE,
+                                                        deferRender = FALSE,
+                                                        info = FALSE,
+                                                        processing = TRUE,
                                                         searching = FALSE,
-                                                        pageLength = -1))
+                                                        autoWidth = TRUE,
+                                                        scrollX=TRUE, 
+                                                        pageLength = -1),
+                                           rownames = FALSE,
+                                           selection = 'single')
     }
+    # Testing:
+    # write_feather(x = opgeslagenLeningen, path = "opgeslagenLeningenVoorbeelden.feather")
+    toggle(id = "leningenVerwAlles2Div", condition = FALSE)
   }
   toonOpgeslagenLeningen()
   
+  observeEvent(input$leningenVerw, {
+    geselecteerdeRij <- input$leningenDT_rows_selected
+    if(is.null(geselecteerdeRij) || length(geselecteerdeRij) == 0){
+      return(NULL)
+    }
+    opgeslagenLeningen <<- opgeslagenLeningen[-geselecteerdeRij]
+    toonOpgeslagenLeningen()
+  })
+  
+  observeEvent(input$leningenVerwAlles, {
+    toggle(id = "leningenVerwAllesDiv", condition = FALSE)
+    toggle(id = "leningenVerwAlles2Div", condition = TRUE)
+  })
+  
+  observeEvent(input$leningenVerwAlles2, {
+    opgeslagenLeningen <<- NULL
+    toonOpgeslagenLeningen()
+    toggle(id = "leningenVerwAllesDiv", condition = TRUE)
+    toggle(id = "leningenVerwAlles2Div", condition = FALSE)
+    
+  })
+  
+  # Import/Export
+  observeEvent(input$leningenImp, {
+    print(input$leningenImp$datapath)
+    tryCatch({
+      opgeslagenLeningen   <<- data.table(read_feather(input$leningenImp$datapath))
+      toonOpgeslagenLeningen()
+      toggle(id = "leningenImpError", condition = FALSE)
+      print("Succes")
+    },
+    error = function(x){
+      toggle(id = "leningenImpError", condition = TRUE)
+      print("Fail")
+    })
+  })
+  
+  output$leningenExp <- downloadHandler(
+    filename = function() {
+      'LeningenVergelijker.feather'
+    },
+    content = function(file) {
+      write_feather(x = opgeslagenLeningen, path = file)
+    }
+  )
   
   # Lening berekenen
   # lenBereken knop
@@ -216,6 +269,7 @@ shinyServer(function(input, output, session) {
                     "lenSamError", "lenBankError",
                     "lenKost1Error", "lenKostMError", "lenKostJError", "lenInflError",
                     "lenVermStartError", "lenVermInkError", "lenVermUitError", "lenVermBelPercError",
-                    "lenVermBelOpbrPercError"))
+                    "lenVermBelOpbrPercError",
+                    "leningenImpError"))
     toggle(id = errorDiv, condition = FALSE)
 })

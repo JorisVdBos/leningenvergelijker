@@ -179,6 +179,49 @@ body <- dashboardBody(
             "Opgeslagen leningen",
             wellPanel(
               dataTableOutput("leningenDT"),
+              fluidRow(
+                column(
+                  width = 4
+                ),
+                column(
+                  width = 4,
+                  align = "right",
+                  br(),
+                  actionButton(
+                    "leningenVerw",
+                    "Verwijder geselecteerde lening"
+                  ),
+                  br(),
+                  br(),
+                  div(id = "leningenVerwAllesDiv",
+                     actionButton(
+                       "leningenVerwAlles",
+                       "Verwijder alle opgeslagen leningen")
+                  ),
+                  div(id = "leningenVerwAlles2Div",
+                     actionButton(
+                       "leningenVerwAlles2",
+                       "Ben je zeker?",
+                       style = "color: #fff; background-color: #ff0000; border-color: #2e6da4")
+                  )
+                ),
+                column(
+                  width = 4,
+                  align = "left",
+                  fileInput(
+                    "leningenImp",
+                    "Importeer tabel",
+                    multiple = FALSE, 
+                    accept = "RData"
+                  ),
+                  div(id = "leningenImpError",
+                      p(em(HTML("<font color='red'>Gelieve een naam in te voeren.</font>")))),
+                  downloadButton(
+                    "leningenExp",
+                    "Exporteer tabel"
+                  )
+                )
+              ),
               column(
                 width = 8,
                 align="center",
@@ -189,8 +232,7 @@ body <- dashboardBody(
                   label = "       Start simulatie",
                   icon("play"),
                   style="color: #fff; background-color: #337ab7; border-color: #2e6da4")
-              )
-            )
+              ))
           )
         )
     ),
