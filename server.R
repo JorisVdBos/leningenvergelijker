@@ -146,14 +146,13 @@ shinyServer(function(input, output, session) {
       lenInfl <- NA
     }
     if(input$vermogenCheck){
-      inputs <- c(inputs, "lenVermStart", "lenVermInk", "lenVermUit", 
+      inputs <- c(inputs, "lenVermStart", "lenVermInk", 
                   "lenVermBelPerc", "lenVermBelOpbrPerc")
       errorDivs <- c(errorDivs, "lenVermStartError", "lenVermInkError", 
-                     "lenVermUitError", "lenVermBelPercError", "lenVermBelOpbrPercError")
+                     "lenVermBelPercError", "lenVermBelOpbrPercError")
     } else {
       lenVermStart <- NA
       lenVermInk <- NA
-      lenVermUit <- NA
       lenVermBelPerc <- NA
       lenVermBelOpbrPerc <- NA
     }
@@ -200,8 +199,7 @@ shinyServer(function(input, output, session) {
       "Inflatie_Percentage" = lenInfl,
       "Vermogen_Bijhouden" = input$vermogenCheck,
       "Vermogen_Start" = lenVermStart,
-      "Vermogen_Maandelijske_Inkomsten" = lenVermInk,
-      "Vermogen_Maandelijske_Uitgaven" = lenVermUit,
+      "Vermogen_Maandelijsk_Sparen" = lenVermInk,
       "Vermogen_Beleggingspercentage" = lenVermBelPerc,
       "Vermogen_Opbrengst" = lenVermBelOpbrPerc
     ))
@@ -283,6 +281,42 @@ shinyServer(function(input, output, session) {
   )
   
   # Lening berekenen
+  berekendeLening <- NULL
+  
+  observeEvent(input$lenBereken, {
+    # Check invoer
+    
+    # Check ok
+    toggle(id = "leningBerekenBds", condition = TRUE)
+    toggle(id = "leningResultaat", condition = FALSE)
+    
+    # Bereken nieuwe lening
+    
+    # Tonen resultaat
+    # Beschrijving kosten
+    # Aflostable
+    # Plot
+    toggle(id = "leningBerekenBds", condition = FALSE)
+    toggle(id = "leningResultaat", condition = TRUE)
+  })
+  
+  observeEvent(input$lenBereken2, {
+    # Check invoer
+    
+    # Check ok
+    toggle(id = "leningBerekenBds", condition = TRUE)
+    toggle(id = "leningResultaat", condition = FALSE)
+    
+    # Bereken nieuwe lening
+    
+    # Tonen resultaat
+    # Beschrijving kosten
+    # Aflostable
+    # Plot
+    toggle(id = "leningBerekenBds", condition = FALSE)
+    toggle(id = "leningResultaat", condition = TRUE)
+  })
+  
   # lenBereken knop
   
   # Toggle off all errorDivs
@@ -290,8 +324,9 @@ shinyServer(function(input, output, session) {
                     "lenVarTypeError",
                     "lenSamError", "lenBankError",
                     "lenKost1Error", "lenKostMError", "lenKostJError", "lenInflError",
-                    "lenVermStartError", "lenVermInkError", "lenVermUitError", "lenVermBelPercError",
+                    "lenVermStartError", "lenVermInkError", "lenVermBelPercError",
                     "lenVermBelOpbrPercError",
-                    "leningenImpError"))
+                    "leningenImpError",
+                    "leningBerekenBds", "leningResultaat"))
     toggle(id = errorDiv, condition = FALSE)
 })

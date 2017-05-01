@@ -9,4 +9,6 @@ library(DT)
 library(feather)
 
 # Functies
-source("functies.R")
+for (script in list.files("functies")) {
+  source(file.path("functies", script))
+}
