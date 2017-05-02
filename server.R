@@ -302,22 +302,70 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$lenBereken2, {
     # Check invoer
+    geselecteerdeRij <- input$leningenDT_rows_selected
+    if(is.null(geselecteerdeRij) || length(geselecteerdeRij) != 1){
+      toggle(id = "lenBereken2Error", condition = TRUE)
+      toggle(id = "leningBerekenBds", condition = FALSE)
+      toggle(id = "leningResultaat", condition = FALSE)
+      return(NULL)
+    }
     
     # Check ok
+    toggle(id = "lenBereken2Error", condition = FALSE)
     toggle(id = "leningBerekenBds", condition = TRUE)
     toggle(id = "leningResultaat", condition = FALSE)
     
     # Bereken nieuwe lening
+    berekendeLening <<- simuleerLeningShiny(
+      leningTotaalEuro = as.numeric(
+        strsplit(
+          opgeslagenLeningen$Te_Lenen_Bedrag[geselecteerdeRij],split = "/"
+        )[[1]]
+      ),
+      percentJaar = as.numeric(
+        strsplit(
+          opgeslagenLeningen$Rentevoet[geselecteerdeRij],split = "/"
+        )[[1]]
+      )/100, 
+      jaar = as.numeric(
+        strsplit(
+          opgeslagenLeningen$Jaar[geselecteerdeRij],split = "/"
+        )[[1]]
+      ), 
+      type = strsplit(
+          opgeslagenLeningen$Vast_Of_Variabel[geselecteerdeRij],split = "/"
+      )[[1]],
+      variabelType = suppressWarnings(
+        as.numeric(
+          strsplit(
+            opgeslagenLeningen$Variabel_Herziening[geselecteerdeRij],split = "/"
+          )[[1]]
+      )),
+      opties = as.list(opgeslagenLeningen[geselecteerdeRij]))
     
     # Tonen resultaat
+    output$lenBeschrijving <- lenBeschrijvingFunct
     # Beschrijving kosten
-    # Aflostable
+    output$lenAflossingstabel <- lenAflossingstabelFunct
     # Plot
     toggle(id = "leningBerekenBds", condition = FALSE)
     toggle(id = "leningResultaat", condition = TRUE)
   })
   
-  # lenBereken knop
+  # Leningsimulaties output:
+  lenBeschrijvingFunct <- renderUI({
+    HTML(paste(berekendeLening$beschrijving, collapse = "\n"))
+  })
+  
+  lenAflossingstabelFunct <- renderDataTable({
+    berekendeLening$aflostabel
+  }, options = list(deferRender = FALSE,
+                    info = FALSE,
+                    searching = FALSE,
+                    scrollX=TRUE, 
+                    pageLength = 12),
+  rownames = FALSE,
+  selection = 'none')
   
   # Toggle off all errorDivs
   for(errorDiv in c("lenBedrError", "lenRVError", "lenJaarError",
@@ -327,6 +375,7 @@ shinyServer(function(input, output, session) {
                     "lenVermStartError", "lenVermInkError", "lenVermBelPercError",
                     "lenVermBelOpbrPercError",
                     "leningenImpError",
-                    "leningBerekenBds", "leningResultaat"))
+                    "leningBerekenBds", "leningResultaat",
+                    "lenBereken2Error"))
     toggle(id = errorDiv, condition = FALSE)
 })

@@ -91,6 +91,8 @@ body <- dashboardBody(
                 label = "Start simulatie",
                 styleclass = "success"),
               br(),
+              div(id = "lenBereken2Error",
+                  p(em(HTML("<font color='red'>Gelieve een lening aan te duiden in bovenstaande tabel.</font>")))),
               br(),
               br(),
               br()
@@ -183,6 +185,11 @@ body <- dashboardBody(
                   value = FALSE),
                 div(
                   id = "lenInfldiv",
+                  paste0("Naast extra berekingen worden", 
+                         "volgende waarden per maand aangepast aan de inflatie: ",
+                         "Extra kosten van de lening, je maandelijks sparen. ", 
+                         "Deze worden normaal door de jaren wel aangepast door ",
+                         "de bank en jezelf."),
                   textInput("lenInfl", 
                             "Inflatie in percent per jaar: ", 
                             placeholder = "2,0")),
@@ -255,13 +262,12 @@ body <- dashboardBody(
         div(
           id = "leningResultaat",
           wellPanel(
-              "Beschrijving lening"
+              uiOutput("lenBeschrijving")
           ),
           tabsetPanel(
             tabPanel(
-              "Aflostabel"
-              ,
-              "Tabel :P"
+              "Aflostabel",
+              dataTableOutput("lenAflossingstabel")
             ),
             tabPanel(
               "Grafiek",

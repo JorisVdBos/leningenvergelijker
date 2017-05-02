@@ -10,13 +10,16 @@ simuleerLening <- function(leningTotaalEuro,
     return(composieteLening(leningTotaalEuro,
                             percentJaar,
                             jaar,
-                            type, afkoopjaar = rep(0, length(leningTotaalEuro))))
+                            type, 
+                            variabelType,
+                            afkoopjaar = afkoopjaar))
   }
   
   variabelen <- list(leningTotaalEuro = leningTotaalEuro,
                      percentJaar = percentJaar,
                      jaar = jaar,
                      type = type,
+                     variabelType = variabelType,
                      afkoopjaar = afkoopjaar)
   
   if(type == "Vast")
@@ -25,7 +28,7 @@ simuleerLening <- function(leningTotaalEuro,
                               jaar,
                               afkoopjaar),
                  kenmerken = variabelen))
-  else if(grep("Variabel", type) == 1){
+  else if(type == "Variabel"){
     return(list(aflostabel = simuleerLeningVariabel(leningTotaalEuro,
                                                     percentJaar, 
                                                     jaar,
@@ -157,8 +160,14 @@ simuleerAflossingTabelVast <- function(leningTotaalEuro,
 composieteLening <- function(leningTotaalEuro,
                              percentJaar, 
                              jaar, 
-                             type = "vast",
+                             type,
+                             variabelType,
                              afkoopjaar = 0){
+  
+  if(length(afkoopjaar) < length(leningTotaalEuro) && afkoopjaar == 0){
+    afkoopjaar <- rep(0, length(leningTotaalEuro))
+  }
+  
   leningen <- paste0("lening", 1:length(leningTotaalEuro))
   for(lening in 1:length(leningTotaalEuro)){
     assign(leningen[lening],
@@ -166,6 +175,7 @@ composieteLening <- function(leningTotaalEuro,
                                   percentJaar = percentJaar[lening], 
                                   jaar = jaar[lening],
                                   type = type[lening], 
+                                  variabelType = variabelType[lening],
                                   afkoopjaar = afkoopjaar[lening])$aflostabel)
   }
   
@@ -179,10 +189,11 @@ composieteLening <- function(leningTotaalEuro,
   
   return(list(aflostabel = leningenTotaal,
               kenmerken = list(leningTotaalEuro = leningTotaalEuro,
-                                 percentJaar = percentJaar,
-                                 jaar = jaar,
-                                 type = type,
-                                 afkoopjaar = afkoopjaar)))
+                               percentJaar = percentJaar,
+                               jaar = jaar,
+                               type = type,
+                               variabelType = variabelType,
+                               afkoopjaar = afkoopjaar)))
 }
 
 # Lening afkopen ----
