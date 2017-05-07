@@ -94,20 +94,23 @@ simuleerLeningVariabel <- function(leningTotaalEuro,
   vast1 <- simuleerLeningVast(leningTotaalEuro,
                               percentJaar, 
                               jaar)
+  
   # Na "verdubbelJaar" jaar herziening
   if(jaar <= verdubbelJaar || (afkoopjaar > 0 && afkoopjaar <= verdubbelJaar)){
     vast1 <- afkopen(vast1, percentJaar, afkoopjaar)
     return(vast1)
   }
   
-  vast2 <- simuleerLeningVast(vast1[maand == verdubbelJaar*12-1]$lening_open,
-                              percentJaar*2, 
+  vast2 <- simuleerLeningVast(vast1[maand == verdubbelJaar*12]$lening_open,
+                              max(percentJaar*2, percentJaar + 0.02), 
                               jaar-verdubbelJaar)
   
-  totaalVar <- rbind(vast1[maand < verdubbelJaar*12-1], vast2)
+  totaalVar <- rbind(vast1[maand <= verdubbelJaar*12], vast2)
   totaalVar$maand <- 1:(dim(totaalVar)[1])
   
-  totaalVar <- afkopen(totaalVar, percentJaar*2, afkoopjaar)
+  totaalVar <- afkopen(totaalVar, 
+                       max(percentJaar*2, percentJaar + 0.02), 
+                       afkoopjaar)
   
   return(totaalVar)
 }
