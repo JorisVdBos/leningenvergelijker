@@ -212,16 +212,17 @@ shinyServer(function(input, output, session) {
       opgeslagenLeningen <- 
         data.table(Lening ="Geen opgeslagen leningen gevonden!")
     }
+    
     output$leningenDT <- renderDataTable(opgeslagenLeningen,
-                                           options=list(paging = FALSE,
-                                                        deferRender = FALSE,
-                                                        info = FALSE,
-                                                        searching = FALSE,
-                                                        autoWidth = TRUE,
-                                                        scrollX=TRUE, 
-                                                        pageLength = -1),
-                                           rownames = FALSE,
-                                           selection = 'single')
+                                         options=list(paging = FALSE,
+                                                      deferRender = FALSE,
+                                                      info = FALSE,
+                                                      searching = FALSE,
+                                                      autoWidth = TRUE,
+                                                      scrollX=TRUE, 
+                                                      pageLength = -1),
+                                         rownames = FALSE,
+                                         selection = 'single')
     
     # Testing:
     # if(!is.null(opgeslagenLeningen) &&
@@ -316,6 +317,7 @@ shinyServer(function(input, output, session) {
     toggle(id = "leningResultaat", condition = FALSE)
     
     # Bereken nieuwe lening
+    opties <- as.list(opgeslagenLeningen[geselecteerdeRij])
     berekendeLening <<- simuleerLeningShiny(
       leningTotaalEuro = as.numeric(
         strsplit(
@@ -341,31 +343,45 @@ shinyServer(function(input, output, session) {
             opgeslagenLeningen$Variabel_Herziening[geselecteerdeRij],split = "/"
           )[[1]]
       )),
-      opties = as.list(opgeslagenLeningen[geselecteerdeRij]))
+      opties = opties)
     
     # Tonen resultaat
-    output$lenBeschrijving <- lenBeschrijvingFunct
+    output$lenBeschrijving <- renderUI({
+      HTML(paste(berekendeLening$beschrijving, collapse = "\n"))
+    })
+    
     # Beschrijving kosten
-    output$lenAflossingstabel <- lenAflossingstabelFunct
+    nietweergeven <- c()
+    if(!opties$Kosten_Bijhouden){
+      nietweergeven <- c(nietweergeven, "extraKosten")
+      nietweergeven <- c(nietweergeven, "extraKosten_inflatie")
+    }
+    if(!opties$Inflatie_Inrekenen){
+      nietweergeven <- c(nietweergeven, "extraKosten_inflatie")
+    }
+    if(!opties$Vermogen_Bijhouden){
+      nietweergeven <- c(nietweergeven, "vermogen", "beleggenInteresten")
+    }
+    if(length(nietweergeven) > 0){
+      berekendeLening$aflostabel <- berekendeLening$aflostabel[,-nietweergeven, with = FALSE]
+    }
+    
+    # Leningsimulaties output:
+    output$lenAflossingstabel <- renderDataTable({
+      berekendeLening$aflostabel
+    }, options = list(deferRender = FALSE,
+                      info = FALSE,
+                      searching = FALSE,
+                      scrollX=TRUE, 
+                      pageLength = 12),
+    rownames = FALSE,
+    selection = 'none')
+    
     # Plot
     toggle(id = "leningBerekenBds", condition = FALSE)
     toggle(id = "leningResultaat", condition = TRUE)
   })
   
-  # Leningsimulaties output:
-  lenBeschrijvingFunct <- renderUI({
-    HTML(paste(berekendeLening$beschrijving, collapse = "\n"))
-  })
-  
-  lenAflossingstabelFunct <- renderDataTable({
-    berekendeLening$aflostabel
-  }, options = list(deferRender = FALSE,
-                    info = FALSE,
-                    searching = FALSE,
-                    scrollX=TRUE, 
-                    pageLength = 12),
-  rownames = FALSE,
-  selection = 'none')
   
   # Toggle off all errorDivs
   for(errorDiv in c("lenBedrError", "lenRVError", "lenJaarError",
