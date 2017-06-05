@@ -5,8 +5,10 @@ library(shinyjs)
 library(shinysky)
 
 library(data.table)
+library(lubridate)
 library(DT)
 library(feather)
+library(rCharts)
 
 # Functies
 for (script in list.files("functies")) {

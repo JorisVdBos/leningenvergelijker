@@ -1,10 +1,10 @@
 
 simuleerLeningShiny <- function(leningTotaalEuro,
-                           percentJaar,
-                           jaar,
-                           type,
-                           variabelType,
-                           opties = list()){
+                                percentJaar,
+                                jaar,
+                                type,
+                                variabelType,
+                                opties = list()){
   
   lening <- simuleerLening(leningTotaalEuro=leningTotaalEuro,
                            percentJaar=percentJaar, 
@@ -13,7 +13,7 @@ simuleerLeningShiny <- function(leningTotaalEuro,
                            variabelType=variabelType)
   
   # Bekekeningen
-  lening$aflostabel <- kostenVermogenToevoegen(lening$aflostabel, opties)
+lening$aflostabel <- kostenVermogenToevoegen(lening$aflostabel, opties)
   
   totaalExtraKosten <- sum(lening$aflostabel$extraKosten)
   totaalKostenInfl <- sum(lening$aflostabel$extraKosten_inflatie)
@@ -22,9 +22,9 @@ simuleerLeningShiny <- function(leningTotaalEuro,
   vermogenEindeLeningInf <- 
     vermogenEindeLening/(((1+opties$Inflatie_Percentage/100)^(1/12))^(max(jaar)*12))
   
-  totaalOpbrengsten <- sum(lening$aflostabel$beleggenInteresten)
-  totaalOpbrengstenInfl <- sum(lening$aflostabel$beleggenInteresten/
-                                 (((1+opties$Inflatie_Percentage/100)^(1/12))^(lening$aflostabel$beleggenInteresten)))
+  totaalOpbrengsten <- sum(lening$aflostabel$beleggen_interest)
+  totaalOpbrengstenInfl <- sum(lening$aflostabel$beleggen_interest/
+                                 (((1+opties$Inflatie_Percentage/100)^(1/12))^(lening$aflostabel$beleggen_interest)))
   
   # Berekeningen
   berekeningen <- data.table(
@@ -38,7 +38,29 @@ simuleerLeningShiny <- function(leningTotaalEuro,
   )
   
   return(list(aflostabel = lening$aflostabel,
-              beschrijving = beschrijfLening(lening, opties, berekeningen)))
+              beschrijving = beschrijfLening(lening, opties, berekeningen),
+              opties = opties))
+}
+
+numberToEuro <- function(int){
+  str <- as.character(as.double(int))
+  str <- gsub("\\.", ",", str)
+  charsWithoutDot <- nchar(gsub(",.+", "", str))
+  while(charsWithoutDot > 3){
+    str <- paste0(substr(str, 1, charsWithoutDot - 3), 
+                  ".", 
+                  substr(str, charsWithoutDot - 3 + 1, nchar(str)))
+    charsWithoutDot <- charsWithoutDot - 3
+  }
+  
+  if(int %% 1 == 0){
+    str <- paste0(str, ",00")
+  } else {
+    if(nchar(gsub(".+,", "", str)) == 1)
+      str <- paste0(str, "0")
+  }
+  
+  return(str)
 }
 
 beschrijfLening <- function(lening, opties, berekeningen){
@@ -53,8 +75,8 @@ beschrijfLening <- function(lening, opties, berekeningen){
         ":</h3>"))
     beschrijving <- c(beschrijving, paste0(
       "<li>Lening bedrag: ", 
-      lening$kenmerken$leningTotaalEuro[i],
-      "</li>"))
+      numberToEuro(lening$kenmerken$leningTotaalEuro[i]),
+      " euro</li>"))
     if(lening$kenmerken$type[i] == "Vast"){
       beschrijving <- c(beschrijving, paste0(
         "<li>Lening type: ", 
@@ -88,45 +110,45 @@ beschrijfLening <- function(lening, opties, berekeningen){
   beschrijving <- c(beschrijving,"<h2>Beoordeling</h2>")
   beschrijving <- c(beschrijving, paste0(      
     "<li>Totaal afbetalingen: ", 
-    berekeningen$Totaal_Afbetalingen,
+    numberToEuro(berekeningen$Totaal_Afbetalingen),
     " euro</li>",
     "<li>Totaal afbetaald aan interesten: ", 
-    berekeningen$Totaal_Interesten,
+    numberToEuro(berekeningen$Totaal_Interesten),
     " euro</li>"
   ))
   if(opties$Kosten_Bijhouden){
     beschrijving <- c(beschrijving, paste0(      
       "<li>Totaal extra kosten: ", 
-      berekeningen$Totaal_Extra_Kosten,
+      numberToEuro(berekeningen$Totaal_Extra_Kosten),
       " euro</li>",  
       "<li>Totaal alle kosten: ", 
-      berekeningen$Totaal_Interesten + berekeningen$Totaal_Extra_Kosten,
+      numberToEuro(berekeningen$Totaal_Interesten + berekeningen$Totaal_Extra_Kosten),
       " euro</li>"
     ))
   }
   if(opties$Vermogen_Bijhouden){
     beschrijving <- c(beschrijving, paste0(      
       "<li>Vermogen na afbetaling lening: ", 
-      berekeningen$Vermogen_EindeLening,
+      numberToEuro(berekeningen$Vermogen_EindeLening),
       " euro</li>"
     ))
     if(opties$Inflatie_Inrekenen){
       beschrijving <- c(beschrijving, paste0(      
         "<li>Vermogen na afbetaling lening, waarde vandaag: ", 
-        berekeningen$Vermogen_EindeLening_Inflatie,
+        numberToEuro(berekeningen$Vermogen_EindeLening_Inflatie),
         " euro</li>"
       ))
     }
     if(opties$Vermogen_Beleggingspercentage > 0){
       beschrijving <- c(beschrijving, paste0(      
         "<li>Totaal interesten van beleggingen: ", 
-        berekeningen$Vermogen_Belegging_Opbrengsten,
+        numberToEuro(berekeningen$Vermogen_Belegging_Opbrengsten),
         " euro</li>"
       ))
       if(opties$Inflatie_Inrekenen){
         beschrijving <- c(beschrijving, paste0(      
           "<li>Totaal interesten van beleggingen, waarde vandaag: ", 
-          berekeningen$Vermogen_Belegging_Opbrengsten_Inflatie,
+          numberToEuro(berekeningen$Vermogen_Belegging_Opbrengsten_Inflatie),
           " euro</li>"
         ))
       }
@@ -190,18 +212,18 @@ kostenVermogenToevoegen <- function(aflostabel, opties){
       # Maandelijks sparen
       maandelijksSparen[mnd] + 
       # Interest van beleggingen
-      interest[mnd] + 
+      ifelse(interest[mnd]>0, interest[mnd], 0) + 
       # Lagere aflossingen genereren meer vermogen
       (maxAflossing - aflostabel[maand == mnd]$aflossing) -
       # Extra kosten lening
       extraKosten[mnd]
   }
   aflostabel$vermogen <- round(vermogen[-1], 2)
-  aflostabel$beleggenInteresten <- round(interest[-1], 2)
+  aflostabel$beleggen_interest <- ifelse(round(interest[-1], 2)>0, round(interest[-1], 2), 0) 
   
   # if(opties$Inflatie_Inrekenen){
   #   aflostabel[, vermogen_inflatie := vermogen/inflatieMaand^maand]
-  #   aflostabel[, beleggenInteresten_inflatie := beleggenInteresten/inflatieMaand^maand]
+  #   aflostabel[, beleggen_interest_inflatie := beleggen_interest/inflatieMaand^maand]
   # }
   
   return(aflostabel)

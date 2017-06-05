@@ -22,14 +22,13 @@ body <- dashboardBody(
     tags$link(rel = "stylesheet", type = "text/css", href = "AdminLTE-2.0.6/_all-skins.min.css")
   ),
   tabItems(
+    # Lening simulatie ----
     tabItem(
       tabName = "simLen",
-      fluidPage(
-          h1("Simuleer een lening"),
-          p("Een huis of appartement gekocht? Proficiat! Maar hola, de zoektocht is nog niet afgelopen! Een goede lening vinden kan je duizenden euro's besparen, dus een nieuwe zoektocht gaat van start. Algouw ligt je keukentafel vol met papieren met letterlijk duizenden cijfertjes. Bank A geeft een betere rentevoet, maarja bank B heeft dan weer goedkopere verzekeringen! Economisch gezien moet je denken aan inflatie en zo weinig mogelijk lenen, maar fiscaal gezien moet je dan weer zo lang mogelijk lenen. Vriend 1 zegt dit en vriend 2 zegt dat, maar welke lening is nu de beste?"),
-          p("Om leningen te vergelijken begonnen wij een excelbestand waar we alle leningvoorstellen verzamelden. Zelfs met enkele excel functies kregen we moeilijk vat op de waarde van de verschillende voorstellen en moesten we toch nog vaak teruggrijpen naar de aflostabellen van de banken. Daarom schreef ik voor mezelf en mijn partner een programma in de computertaal R dat leningen simuleerde dat leningen kon vergelijken aan de hand van duidelijke criteria. Algauw breidde ik dit uit met zaken zoals inflatie en beleggen omdat ik ook deze in rekening wou brengen. In de hoop dat andere mensen hiermee geholpen zouden worden, schreef ik de applicatie die je momenteel bezoekt!"),
-          p("Hieronder zie je een voorbeeld van een verzameling bankvoorstellen. Aflostabellen en grafieken bekom je door de knop 'Start simulatie' te klikken. In de tab 'nieuwe lening' kan je zelf leningen aan deze tabel toevoegen. Je kan je verzameling bankvoorstellen opslaan en opnieuw inladen zoveel je wilt!")
-      ),
+      h1("Simuleer een lening"),
+      #p("Een huis of appartement gekocht? Proficiat! Maar hola, de zoektocht is nog niet afgelopen! Een goede lening vinden kan je duizenden euro's besparen, dus een nieuwe zoektocht gaat van start. Algouw ligt je keukentafel vol met papieren met letterlijk duizenden cijfertjes. Bank A geeft een betere rentevoet, maarja bank B heeft dan weer goedkopere verzekeringen! Economisch gezien moet je denken aan inflatie en zo weinig mogelijk lenen, maar fiscaal gezien moet je dan weer zo lang mogelijk lenen. Vriend 1 zegt dit en vriend 2 zegt dat, maar welke lening is nu de beste?"),
+      p("Om leningen te vergelijken begonnen wij een excelbestand waar we alle leningvoorstellen verzamelden. Zelfs met enkele excel functies kregen we moeilijk vat op de waarde van de verschillende voorstellen en moesten we toch nog vaak teruggrijpen naar de aflostabellen van de banken. Daarom schreef ik voor mezelf en mijn partner een applicatie in de computertaal 'R' die leningen simuleerde. Zo kon ik ook vragen beantwoorden zoals wat met inflatie, bank kosten, beleggingen, ..."),
+      p("Hieronder zie je een voorbeeld van een verzameling bankvoorstellen. Aflostabellen en grafieken bekom je door een lening aan te klikken en op de knop 'Start simulatie' te klikken. In de tab 'nieuwe lening' kan je zelf leningen aan deze tabel toevoegen. Zo kan je je verzameling bankvoorstellen hier aanmaken, exporteren en opnieuw inladen zoveel je wilt!"),
       # Invoer simulator
       tabsetPanel(
         tabPanel(
@@ -109,7 +108,7 @@ body <- dashboardBody(
                           "Te lenen bedrag in euro:",
                           placeholder = "150000"),
                 div(id = "lenBedrError",
-                    em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")),
+                    em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")),
                     br()),
                 br(),
                 radioButtons("lenVastOfVar",
@@ -120,7 +119,7 @@ body <- dashboardBody(
                               "Herziening jaren:",
                               placeholder = "3"),
                     div(id = "lenVarTypeError",
-                        em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")),
+                        em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")),
                         br()),
                     paste0("Opmerking: De simulatie gaat steeds van het slechste scenario uit: Dat bij de ",
                            "eerste herziening van de rentevoet, deze verdubbelt met een maximum van 2%.")),
@@ -128,13 +127,13 @@ body <- dashboardBody(
                           "Rentevoet in %:",
                           placeholder = "2,5"),
                 div(id = "lenRVError",
-                    p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>"))),
+                    p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>"))),
                     br()),
                 textInput("lenJaar",
                           "Jaar:",
                           placeholder = "25"),
                 div(id = "lenJaarError",
-                    p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
+                    p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")))),
                 br(),
                 actionButton(
                   "lenVoegToe",
@@ -166,19 +165,19 @@ body <- dashboardBody(
                             "Eenmalige kosten, zoals bijvoorbeeld dossierkosten: ", 
                             placeholder = "500"),
                   div(id = "lenKost1Error",
-                      p(em(HTML("<font color='red'>Gelieve een juist getalin te geven.</font>")))),
+                      p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")))),
                   textInput("lenKostM", 
                             paste0("Maandlijke kosten, zoals bijvoorbeeld ",
                                    "bankrekeningkosten of schuldsaldo verzekering: "), 
                             placeholder = "162,62"),
                   div(id = "lenKostMError",
-                      p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
+                      p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")))),
                   textInput("lenKostJ", 
                             paste0("Jaarlijkse kosten, zoals bijvoorbeeld ",
                                    "brandverzekerning: "), 
                             placeholder = "256,3")),
                 div(id = "lenKostJError",
-                    p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
+                    p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")))),
                 checkboxInput(
                   "inflCheck",
                   "Inflatie", 
@@ -194,7 +193,7 @@ body <- dashboardBody(
                             "Inflatie in percent per jaar: ", 
                             placeholder = "2,0")),
                 div(id = "lenInflError",
-                    p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
+                    p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")))),
                 checkboxInput(
                   "vermogenCheck",
                   "Vermogen bijhouden", 
@@ -205,23 +204,23 @@ body <- dashboardBody(
                             "Vermogen bij start ingang lening:", 
                             placeholder = "20000"),
                   div(id = "lenVermStartError",
-                      p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
+                      p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")))),
                   textInput("lenVermInk", 
                             "Gespaard bedrag per maand:", 
                             placeholder = "500"),
                   div(id = "lenVermInkError",
-                      p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
+                      p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")))),
                   textInput("lenVermBelPerc", 
                             "Percentage van vermogen in beleggingen:", 
                             value = 0,
                             placeholder = "40"),
                   div(id = "lenVermBelPercError",
-                      p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>")))),
+                      p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")))),
                   textInput("lenVermBelOpbrPerc", 
                             "Opbrengstpercentage van belegd vermogen per jaar:", 
                             placeholder = "2.0"),
                   div(id = "lenVermBelOpbrPercError",
-                      p(em(HTML("<font color='red'>Gelieve een juist getal in te geven.</font>"))))
+                      p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>"))))
                 )
               )
             )
@@ -270,8 +269,17 @@ body <- dashboardBody(
               dataTableOutput("lenAflossingstabel")
             ),
             tabPanel(
-              "Grafiek",
-              "Grafiek"
+              "Grafiek: Kosten",
+              wellPanel(
+                uiOutput("grafiekKolommenUI"),
+                uiOutput("grafiekStartDatumUI"), 
+                checkboxInput("grafiekInflatie", "Inflatie inrekenen"),
+                sliderInput("grafiekInflatiePerc", "Inflatie percentage:", 
+                            min = -10, max = 10, value = 2, step = 0.1)
+              ),
+              wellPanel(
+                showOutput("grafiekPlot", lib = "morris")
+              )
             )
           )
         )

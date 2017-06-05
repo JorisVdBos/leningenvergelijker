@@ -360,7 +360,7 @@ shinyServer(function(input, output, session) {
       nietweergeven <- c(nietweergeven, "extraKosten_inflatie")
     }
     if(!opties$Vermogen_Bijhouden){
-      nietweergeven <- c(nietweergeven, "vermogen", "beleggenInteresten")
+      nietweergeven <- c(nietweergeven, "vermogen", "beleggen_interest")
     }
     if(length(nietweergeven) > 0){
       berekendeLening$aflostabel <- berekendeLening$aflostabel[,-nietweergeven, with = FALSE]
@@ -377,7 +377,33 @@ shinyServer(function(input, output, session) {
     rownames = FALSE,
     selection = 'none')
     
-    # Plot
+    # Plotopties
+    output$grafiekKolommenUI <- renderUI({
+      opties <- colnames(berekendeLening$aflostabel)[colnames(berekendeLening$aflostabel) != "maand"]
+      if(length(grep("inflatie", opties)) > 0)
+        opties <- opties[-grep("inflatie", opties)]
+      opties <- opties[!opties %in% c("lening_open", "vermogen")]
+      selectInput("grafiekKolommen", "Plot volgende kolommen: ", 
+                  choices = opties, multiple = TRUE, selected = opties)
+    })
+    
+    output$grafiekStartDatumUI <- renderUI({
+      opties <- format(
+        as.Date(Sys.time())-days(as.integer(format(Sys.time(), "%d"))-1) + months(-12:13),
+        format = "%Y-%m"
+      )
+      selectInput("grafiekDatum", "Maand van de eerste betaling:", 
+                  choices = opties, selected = opties[13], multiple = FALSE)
+    })
+    
+    output$grafiekPlot <- renderChart2({
+      leningGrafiek(aflosTabel = berekendeLening$aflostabel, 
+                    startDate = input$grafiekDatum, 
+                    kolommen = input$grafiekKolommen,
+                    inflatie = input$grafiekInflatie,
+                    inflatiePerc = input$grafiekInflatiePerc)
+    })
+    
     toggle(id = "leningBerekenBds", condition = FALSE)
     toggle(id = "leningResultaat", condition = TRUE)
   })
