@@ -29,7 +29,7 @@ lening$aflostabel <- kostenVermogenToevoegen(lening$aflostabel, opties)
   # Berekeningen
   berekeningen <- data.table(
     Totaal_Afbetalingen = sum(lening$aflostabel$aflossing),
-    Totaal_Interesten = round(sum(lening$aflostabel$lening_interest), 2),
+    Totaal_Interesten = round(sum(lening$aflostabel$aflossing_interest), 2),
     Totaal_Extra_Kosten = round(totaalExtraKosten, 2),
     Vermogen_EindeLening = vermogenEindeLening,
     Vermogen_EindeLening_Inflatie = round(vermogenEindeLeningInf, 2),

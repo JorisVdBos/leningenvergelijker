@@ -269,13 +269,14 @@ body <- dashboardBody(
               dataTableOutput("lenAflossingstabel")
             ),
             tabPanel(
-              "Grafiek: Kosten",
+              "Grafiek",
               wellPanel(
                 uiOutput("grafiekKolommenUI"),
                 uiOutput("grafiekStartDatumUI"), 
                 checkboxInput("grafiekInflatie", "Inflatie inrekenen"),
                 sliderInput("grafiekInflatiePerc", "Inflatie percentage:", 
-                            min = -10, max = 10, value = 2, step = 0.1)
+                            min = -10, max = 10, value = 2, step = 0.1),
+                checkboxInput("grafiekCumulatief", "Cumulatief")
               ),
               wellPanel(
                 showOutput("grafiekPlot", lib = "morris")

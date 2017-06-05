@@ -125,8 +125,8 @@ simuleerAflossingTabelVast <- function(leningTotaalEuro,
   aflossing <- data.table(maand = 1, 
                           aflossing = aflossingMaand,
                           lening_open = leningTotaalEuro-aflossingMaand+leningTotaalEuro*percentMaand, 
-                          lening_kapitaal = aflossingMaand-leningTotaalEuro*percentMaand,
-                          lening_interest = leningTotaalEuro*percentMaand)
+                          aflossing_kapitaal = aflossingMaand-leningTotaalEuro*percentMaand,
+                          aflossing_interest = leningTotaalEuro*percentMaand)
   for(mnd in 2:(jaar*12)){
     vorigeMaand <- aflossing[maand == mnd - 1]
     if(!type == "vast"){
@@ -141,8 +141,8 @@ simuleerAflossingTabelVast <- function(leningTotaalEuro,
       maand = mnd, 
       aflossing = aflossingMaand,
       lening_open = lening_open,
-      lening_kapitaal = aflossingMaand-vorigeMaand$lening_open*percentMaand,
-      lening_interest = vorigeMaand$lening_open*percentMaand))
+      aflossing_kapitaal = aflossingMaand-vorigeMaand$lening_open*percentMaand,
+      aflossing_interest = vorigeMaand$lening_open*percentMaand))
   }
   
   
@@ -150,7 +150,7 @@ simuleerAflossingTabelVast <- function(leningTotaalEuro,
     # Laatste maand aflossing zal de totale lening aflossen
     aflossing[maand == jaar*12, aflossing := aflossing+lening_open]
     aflossing[maand == jaar*12, lening_open := 0]
-    aflossing[maand == jaar*12, lening_kapitaal := aflossing-lening_interest]
+    aflossing[maand == jaar*12, aflossing_kapitaal := aflossing-aflossing_interest]
     for(col in colnames(aflossing)[-1]){
       aflossing[[col]] <- round(aflossing[[col]]*100)/100
     }
@@ -207,8 +207,8 @@ afkopen <- function(lening, percentJaar, afkoopjaar){
   administratieveBoetePerc <- ((1+percentJaar)^(1/12) - 1)*3
   afkoopsom <- lening[maand == afkoopjaar*12]$lening_open
   
-  lening[maand == afkoopjaar*12, c("lening_open", "lening_interest", "aflossing") := list(0,0,afkoopsom + afkoopsom*administratieveBoetePerc)]
-  lening[maand > afkoopjaar*12, c("lening_open", "lening_interest", "aflossing") := list(0,0,0)]
+  lening[maand == afkoopjaar*12, c("lening_open", "aflossing_interest", "aflossing") := list(0,0,afkoopsom + afkoopsom*administratieveBoetePerc)]
+  lening[maand > afkoopjaar*12, c("lening_open", "aflossing_interest", "aflossing") := list(0,0,0)]
   
   return(lening)
 }

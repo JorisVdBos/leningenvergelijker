@@ -396,13 +396,20 @@ shinyServer(function(input, output, session) {
                   choices = opties, selected = opties[13], multiple = FALSE)
     })
     
-    output$grafiekPlot <- renderChart2({
-      leningGrafiek(aflosTabel = berekendeLening$aflostabel, 
-                    startDate = input$grafiekDatum, 
-                    kolommen = input$grafiekKolommen,
-                    inflatie = input$grafiekInflatie,
-                    inflatiePerc = input$grafiekInflatiePerc)
+    
+    observeEvent(c(input$grafiekDatum, input$grafiekKolommen, input$grafiekInflatie, 
+                   input$grafiekInflatiePerc, input$grafiekCumulatief), {
+      plot1 <- leningGrafiek(aflosTabel = berekendeLening$aflostabel, 
+                             startDate = input$grafiekDatum, 
+                             kolommen = input$grafiekKolommen,
+                             inflatie = input$grafiekInflatie,
+                             inflatiePerc = input$grafiekInflatiePerc, 
+                             cumulatief = input$grafiekCumulatief)
+      output$grafiekPlot <- renderChart2({
+        plot1
+      })
     })
+    
     
     toggle(id = "leningBerekenBds", condition = FALSE)
     toggle(id = "leningResultaat", condition = TRUE)
