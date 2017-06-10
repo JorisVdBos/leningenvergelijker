@@ -4,8 +4,6 @@ leningGrafiek <- function(aflosTabel,
                           inflatie = FALSE, 
                           inflatiePerc = 0,
                           cumulatief = FALSE){
-  print("Grafieken")
-  print(kolommen)
   if(is.null(kolommen))
     return(NULL)
   if(inflatie){
@@ -19,7 +17,6 @@ leningGrafiek <- function(aflosTabel,
     kolommen <- paste0(kolommen, "_inflatie")
   }
   
-  print(kolommen)
   if(cumulatief){
     for(kolom in kolommen){
       aflosTabel[, cumul := cumsum(get(kolom))]
@@ -28,8 +25,6 @@ leningGrafiek <- function(aflosTabel,
     }
     kolommen <- paste0("cumulatief_", kolommen)
   }
-  
-  print(kolommen)
   
   # aflosTabel$maand <- as.Date(paste0(startDate, "-01"), format = "%Y-%m-%d") +
   #   months(aflosTabel$maand - 1)

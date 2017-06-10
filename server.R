@@ -67,6 +67,7 @@ shinyServer(function(input, output, session) {
     # Invoer ok:
     if(is.numeric(lenVarType))
       lenVarType <- floor(lenVarType)
+    
     leningSamenstelling <<- 
       rbind(leningSamenstelling, 
             data.table(
@@ -76,6 +77,7 @@ shinyServer(function(input, output, session) {
               "Rentevoet" = lenRV,
               "Jaar" = floor(lenJaar)
             ))
+    
     toonLeningSamenstelling()
   })
   
@@ -183,6 +185,7 @@ shinyServer(function(input, output, session) {
     
     if(!checks)
       return(NULL)
+    
     # Opslaan:
     opgeslagenLeningen <<- rbind(opgeslagenLeningen, data.table(
       "Bank" = input$lenBank,
@@ -285,18 +288,193 @@ shinyServer(function(input, output, session) {
   berekendeLening <- NULL
   
   observeEvent(input$lenBereken, {
-    # Check invoer
+    # Invoer checken:
+    checks <- TRUE
+    
+    if(is.null(leningSamenstelling) || dim(leningSamenstelling)[1] == 0){
+      toggle(id = "lenSamError", 
+             condition = TRUE)
+      checks <- FALSE
+    } else {
+      toggle(id = "lenSamError", 
+             condition = FALSE)
+    }
+    
+    inputs <- c()
+    errorDivs <- c()
+    if(input$kostenCheck){
+      inputs <- c(inputs, "lenKost1", "lenKostM", "lenKostJ")
+      errorDivs <- c(errorDivs, "lenKost1Error", "lenKostMError", "lenKostJError")
+    } else {
+      lenKost1 <- NA
+      lenKostM <- NA
+      lenKostJ <- NA
+    }
+    if(input$inflCheck){
+      inputs <- c(inputs, "lenInfl")
+      errorDivs <- c(errorDivs, "lenInflError")
+    } else {
+      lenInfl <- NA
+    }
+    if(input$vermogenCheck){
+      inputs <- c(inputs, "lenVermStart", "lenVermInk", 
+                  "lenVermBelPerc", "lenVermBelOpbrPerc")
+      errorDivs <- c(errorDivs, "lenVermStartError", "lenVermInkError", 
+                     "lenVermBelPercError", "lenVermBelOpbrPercError")
+    } else {
+      lenVermStart <- NA
+      lenVermInk <- NA
+      lenVermBelPerc <- NA
+      lenVermBelOpbrPerc <- NA
+    }
+    
+    for(inp in inputs){
+      dum <- 
+        tryCatch({
+          as.numeric(
+            gsub(",", "\\.", input[[inp]])
+          )
+        },
+        warning = function(x){
+          NA
+        })
+      
+      if(is.na(dum)){
+        toggle(id = errorDivs[which(inputs == inp)], 
+               condition = TRUE)
+        print(paste("Error: ", inp))
+        checks <- FALSE
+      } else {
+        toggle(id = errorDivs[which(inputs == inp)], 
+               condition = FALSE)
+        assign(x = inp, 
+               value = dum)
+      }
+    }
+    
+    if(!checks)
+      return(NULL)
+    
+    # opties:
+    leningInvoer <- data.table(
+      "Te_Lenen_Bedrag" = paste(leningSamenstelling$Te_Lenen_Bedrag, collapse = "/"),
+      "Vast_Of_Variabel" = paste(leningSamenstelling$Vast_Of_Variabel, collapse = "/"),
+      "Variabel_Herziening" = paste(leningSamenstelling$Variabel_Herziening, collapse = "/"),
+      "Rentevoet" = paste(leningSamenstelling$Rentevoet, collapse = "/"),
+      "Jaar" = paste(leningSamenstelling$Jaar, collapse = "/"),
+      "Kosten_Bijhouden" = input$kostenCheck,
+      "Kosten_Eenmalig" = lenKost1,
+      "Kosten_Maandelijks" = lenKostM,
+      "Kosten_Jaarlijks" = lenKostJ,
+      "Inflatie_Inrekenen" = input$inflCheck,
+      "Inflatie_Percentage" = lenInfl,
+      "Vermogen_Bijhouden" = input$vermogenCheck,
+      "Vermogen_Start" = lenVermStart,
+      "Vermogen_Maandelijsk_Sparen" = lenVermInk,
+      "Vermogen_Beleggingspercentage" = lenVermBelPerc,
+      "Vermogen_Opbrengst" = lenVermBelOpbrPerc
+    )
     
     # Check ok
+    toggle(id = "lenBereken2Error", condition = FALSE)
     toggle(id = "leningBerekenBds", condition = TRUE)
     toggle(id = "leningResultaat", condition = FALSE)
     
     # Bereken nieuwe lening
+    opties <-  as.list(leningInvoer[1])
+    berekendeLening <<- simuleerLeningShiny(
+      leningTotaalEuro = as.numeric(
+        strsplit(
+          leningInvoer$Te_Lenen_Bedrag[1],split = "/"
+        )[[1]]
+      ),
+      percentJaar = as.numeric(
+        strsplit(
+          leningInvoer$Rentevoet[1],split = "/"
+        )[[1]]
+      )/100, 
+      jaar = as.numeric(
+        strsplit(
+          leningInvoer$Jaar[1],split = "/"
+        )[[1]]
+      ), 
+      type = strsplit(
+        leningInvoer$Vast_Of_Variabel[1],split = "/"
+      )[[1]],
+      variabelType = suppressWarnings(
+        as.numeric(
+          strsplit(
+            leningInvoer$Variabel_Herziening[1],split = "/"
+          )[[1]]
+        )),
+      opties = opties)
     
     # Tonen resultaat
+    output$lenBeschrijving <- renderUI({
+      HTML(paste(berekendeLening$beschrijving, collapse = "\n"))
+    })
+    
     # Beschrijving kosten
-    # Aflostable
-    # Plot
+    nietweergeven <- c()
+    if(!opties$Kosten_Bijhouden){
+      nietweergeven <- c(nietweergeven, "extraKosten")
+      nietweergeven <- c(nietweergeven, "extraKosten_inflatie")
+    }
+    if(!opties$Inflatie_Inrekenen){
+      nietweergeven <- c(nietweergeven, "extraKosten_inflatie")
+    }
+    if(!opties$Vermogen_Bijhouden){
+      nietweergeven <- c(nietweergeven, "vermogen", "beleggen_interest")
+    }
+    if(length(nietweergeven) > 0){
+      berekendeLening$aflostabel <- berekendeLening$aflostabel[,-nietweergeven, with = FALSE]
+    }
+    
+    # Leningsimulaties output:
+    output$lenAflossingstabel <- renderDataTable({
+      berekendeLening$aflostabel
+    }, options = list(deferRender = FALSE,
+                      info = FALSE,
+                      searching = FALSE,
+                      scrollX=TRUE, 
+                      pageLength = 12),
+    rownames = FALSE,
+    selection = 'none')
+    
+    # Plotopties
+    output$grafiekKolommenUI <- renderUI({
+      opties <- colnames(berekendeLening$aflostabel)[colnames(berekendeLening$aflostabel) != "maand"]
+      if(length(grep("inflatie", opties)) > 0)
+        opties <- opties[-grep("inflatie", opties)]
+      opties <- opties[!opties %in% c("lening_open", "vermogen")]
+      selectInput("grafiekKolommen", "Plot volgende kolommen: ", 
+                  choices = opties, multiple = TRUE, selected = opties)
+    })
+    
+    output$grafiekStartDatumUI <- renderUI({
+      opties <- format(
+        as.Date(Sys.time())-days(as.integer(format(Sys.time(), "%d"))-1) + months(-12:13),
+        format = "%Y-%m"
+      )
+      selectInput("grafiekDatum", "Maand van de eerste betaling:", 
+                  choices = opties, selected = opties[13], multiple = FALSE)
+    })
+    
+    
+    observeEvent(c(input$grafiekDatum, input$grafiekKolommen, input$grafiekInflatie, 
+                   input$grafiekInflatiePerc, input$grafiekCumulatief), {
+                     plot1 <- leningGrafiek(aflosTabel = berekendeLening$aflostabel, 
+                                            startDate = input$grafiekDatum, 
+                                            kolommen = input$grafiekKolommen,
+                                            inflatie = input$grafiekInflatie,
+                                            inflatiePerc = input$grafiekInflatiePerc, 
+                                            cumulatief = input$grafiekCumulatief)
+                     output$grafiekPlot <- renderChart2({
+                       plot1
+                     })
+                   })
+    
+    
     toggle(id = "leningBerekenBds", condition = FALSE)
     toggle(id = "leningResultaat", condition = TRUE)
   })
