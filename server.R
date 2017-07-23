@@ -82,12 +82,15 @@ shinyServer(function(input, output, session) {
   })
   
   toonLeningSamenstelling <- function(){
-    output$lenInputDT <- renderDataTable(leningSamenstelling,
-                                         options=list(autoWidth = TRUE,
-                                                      scrollX=TRUE, 
-                                                      paging = FALSE,
-                                                      searching = FALSE,
-                                                      pageLength = -1))
+    output$lenInputDT <- renderDataTable({
+      names(leningSamenstelling) <- mapNames(names(leningSamenstelling))
+      leningSamenstelling
+    },
+    options=list(autoWidth = TRUE,
+                 scrollX=TRUE, 
+                 paging = FALSE,
+                 searching = FALSE,
+                 pageLength = -1))
   }
   toonLeningSamenstelling()
   
@@ -111,6 +114,8 @@ shinyServer(function(input, output, session) {
     opgeslagenLeningen <- data.table(read_feather(path = "opgeslagenLeningenVoorbeelden.feather"))
   
   observeEvent(input$lenOpslaan, {
+    toggle(id = "lenBankSucces", condition = FALSE)
+    
     # Invoer checken:
     checks <- TRUE
     
@@ -128,6 +133,14 @@ shinyServer(function(input, output, session) {
       checks <- FALSE
     } else {
       toggle(id = "lenBankError", 
+             condition = FALSE)
+    }
+    if(!is.null(input$lenBank) && input$lenBank %in% opgeslagenLeningen$Bank){
+      toggle(id = "lenBankError2", 
+             condition = TRUE)
+      checks <- FALSE
+    } else {
+      toggle(id = "lenBankError2", 
              condition = FALSE)
     }
     
@@ -207,6 +220,8 @@ shinyServer(function(input, output, session) {
       "Vermogen_Opbrengst" = lenVermBelOpbrPerc
     ))
     
+    toggle(id = "lenBankSucces", condition = TRUE)
+    
     toonOpgeslagenLeningen()
   })
   
@@ -216,16 +231,19 @@ shinyServer(function(input, output, session) {
         data.table(Lening ="Geen opgeslagen leningen gevonden!")
     }
     
-    output$leningenDT <- renderDataTable(opgeslagenLeningen,
-                                         options=list(paging = FALSE,
-                                                      deferRender = FALSE,
-                                                      info = FALSE,
-                                                      searching = FALSE,
-                                                      autoWidth = TRUE,
-                                                      scrollX=TRUE, 
-                                                      pageLength = -1),
-                                         rownames = FALSE,
-                                         selection = 'single')
+    output$leningenDT <- renderDataTable({
+      names(opgeslagenLeningen) <- mapNames(names(opgeslagenLeningen))
+      opgeslagenLeningen
+    },
+    options=list(paging = FALSE,
+                 deferRender = FALSE,
+                 info = FALSE,
+                 searching = FALSE,
+                 autoWidth = TRUE,
+                 scrollX=TRUE, 
+                 pageLength = -1),
+    rownames = FALSE,
+    selection = 'single')
     
     # Testing:
     # if(!is.null(opgeslagenLeningen) &&
@@ -424,7 +442,7 @@ shinyServer(function(input, output, session) {
       nietweergeven <- c(nietweergeven, "extraKosten_inflatie")
     }
     if(!opties$Vermogen_Bijhouden){
-      nietweergeven <- c(nietweergeven, "vermogen", "beleggen_interest")
+      nietweergeven <- c(nietweergeven, "vermogen", "vermogenVerschil", "beleggen_interest")
     }
     if(length(nietweergeven) > 0){
       berekendeLening$aflostabel <- berekendeLening$aflostabel[,-nietweergeven, with = FALSE]
@@ -432,6 +450,7 @@ shinyServer(function(input, output, session) {
     
     # Leningsimulaties output:
     output$lenAflossingstabel <- renderDataTable({
+      names(berekendeLening$aflostabel) <- mapNames(names(berekendeLening$aflostabel))
       berekendeLening$aflostabel
     }, options = list(deferRender = FALSE,
                       info = FALSE,
@@ -441,14 +460,25 @@ shinyServer(function(input, output, session) {
     rownames = FALSE,
     selection = 'none')
     
+    output$lenAflossingstabelExport <- downloadHandler(
+      filename = function() {
+        'aflostabel.csv'
+      },
+      content = function(file) {
+        names(berekendeLening$aflostabel) <- mapNames(names(berekendeLening$aflostabel))
+        
+        write.csv(x = berekendeLening$aflostabel, file = file)
+      }
+    )
+    
     # Plotopties
     output$grafiekKolommenUI <- renderUI({
       opties <- colnames(berekendeLening$aflostabel)[colnames(berekendeLening$aflostabel) != "maand"]
       if(length(grep("inflatie", opties)) > 0)
         opties <- opties[-grep("inflatie", opties)]
-      opties <- opties[!opties %in% c("lening_open", "vermogen")]
+      opties <- opties[!opties %in% c("lening_open", "vermogenVerschil")]
       selectInput("grafiekKolommen", "Plot volgende kolommen: ", 
-                  choices = opties, multiple = TRUE, selected = opties)
+                  choices = mapNames(opties), multiple = TRUE, selected = mapNames(opties))
     })
     
     output$grafiekStartDatumUI <- renderUI({
@@ -461,19 +491,42 @@ shinyServer(function(input, output, session) {
     })
     
     
-    observeEvent(c(input$grafiekDatum, input$grafiekKolommen, input$grafiekInflatie, 
+    observeEvent(c(input$grafiekDatum, input$grafiekKolommen, input$grafiekInflatie,  
                    input$grafiekInflatiePerc, input$grafiekCumulatief), {
-                     plot1 <- leningGrafiek(aflosTabel = berekendeLening$aflostabel, 
-                                            startDate = input$grafiekDatum, 
-                                            kolommen = input$grafiekKolommen,
-                                            inflatie = input$grafiekInflatie,
-                                            inflatiePerc = input$grafiekInflatiePerc, 
-                                            cumulatief = input$grafiekCumulatief)
-                     output$grafiekPlot <- renderChart2({
-                       plot1
-                     })
-                   })
+      if(is.null(berekendeLening))
+        return(NULL)
+      plot1 <- leningGrafiek(aflosTabel = berekendeLening$aflostabel, 
+                             startDate = input$grafiekDatum, 
+                             kolommen = unMapNames(input$grafiekKolommen),
+                             inflatie = input$grafiekInflatie,
+                             inflatiePerc = input$grafiekInflatiePerc, 
+                             cumulatief = input$grafiekCumulatief)
+      output$grafiekPlot <- renderPlot({
+        plot1$plot
+      })
+      
+      output$grafiekTabel <- renderDataTable({
+        plot1$tabel
+      },
+      options=list(autoWidth = TRUE,
+                   scrollX=TRUE, 
+                   paging = FALSE,
+                   searching = FALSE,
+                   pageLength = -1)
+      , selection = "none")
+    })
     
+    output$grafiekExport <- downloadHandler(
+      filename = function() {
+        'aflostabel_grafiekdata.csv'
+      },
+      content = function(file) {
+        if(is.null(opgeslagenLeningen) || dim(opgeslagenLeningen)[1] == 0)
+          return(NULL)
+        
+        write.csv(x = plot1$tabel, file = file)
+      }
+    )
     
     toggle(id = "leningBerekenBds", condition = FALSE)
     toggle(id = "leningResultaat", condition = TRUE)
@@ -538,7 +591,7 @@ shinyServer(function(input, output, session) {
       nietweergeven <- c(nietweergeven, "extraKosten_inflatie")
     }
     if(!opties$Vermogen_Bijhouden){
-      nietweergeven <- c(nietweergeven, "vermogen", "beleggen_interest")
+      nietweergeven <- c(nietweergeven, "vermogen", "beleggen_interest", "vermogenVerschil")
     }
     if(length(nietweergeven) > 0){
       berekendeLening$aflostabel <- berekendeLening$aflostabel[,-nietweergeven, with = FALSE]
@@ -546,6 +599,7 @@ shinyServer(function(input, output, session) {
     
     # Leningsimulaties output:
     output$lenAflossingstabel <- renderDataTable({
+      names(berekendeLening$aflostabel) <- mapNames(names(berekendeLening$aflostabel))
       berekendeLening$aflostabel
     }, options = list(deferRender = FALSE,
                       info = FALSE,
@@ -555,14 +609,33 @@ shinyServer(function(input, output, session) {
     rownames = FALSE,
     selection = 'none')
     
+    outputglenAflossingstabelExport <- downloadHandler(
+      filename = function() {
+        paste0(gsub(" ", "_", opties$Bank), '_aflostabel.csv')
+      },
+      content = function(file) {
+        names(berekendeLening$aflostabel) <- mapNames(names(berekendeLening$aflostabel))
+        
+        write.csv(x = berekendeLening$aflostabel, file = file)
+      }
+    )
+    
+    
+    
     # Plotopties
     output$grafiekKolommenUI <- renderUI({
       opties <- colnames(berekendeLening$aflostabel)[colnames(berekendeLening$aflostabel) != "maand"]
       if(length(grep("inflatie", opties)) > 0)
         opties <- opties[-grep("inflatie", opties)]
-      opties <- opties[!opties %in% c("lening_open", "vermogen")]
+      opties <- opties[!opties %in% c("lening_open", "vermogenVerschil")]
+      if(length(unique(berekendeLening$aflostabel$vermogen)) < 3){
+        opties <- opties[-which(opties %in% c('vermogen', "beleggen_interest"))]
+      }
+      if(length(unique(berekendeLening$aflostabel$extraKosten)) < 3){
+        opties <- opties[-which(opties %in% c('extraKosten'))]
+      }
       selectInput("grafiekKolommen", "Plot volgende kolommen: ", 
-                  choices = opties, multiple = TRUE, selected = opties)
+                  choices = mapNames(opties), multiple = TRUE, selected = mapNames(opties))
     })
     
     output$grafiekStartDatumUI <- renderUI({
@@ -577,15 +650,40 @@ shinyServer(function(input, output, session) {
     
     observeEvent(c(input$grafiekDatum, input$grafiekKolommen, input$grafiekInflatie, 
                    input$grafiekInflatiePerc, input$grafiekCumulatief), {
+       if(is.null(berekendeLening) || is.null(input$grafiekDatum))
+         return(NULL)
       plot1 <- leningGrafiek(aflosTabel = berekendeLening$aflostabel, 
                              startDate = input$grafiekDatum, 
-                             kolommen = input$grafiekKolommen,
+                             kolommen = unMapNames(input$grafiekKolommen),
                              inflatie = input$grafiekInflatie,
                              inflatiePerc = input$grafiekInflatiePerc, 
                              cumulatief = input$grafiekCumulatief)
-      output$grafiekPlot <- renderChart2({
-        plot1
+      output$grafiekPlot <- renderPlot({
+        plot1$plot
       })
+      
+      output$grafiekTabel <- renderDataTable({
+        plot1$tabel
+      },
+      options=list(autoWidth = TRUE,
+                   scrollX=TRUE, 
+                   paging = FALSE,
+                   searching = FALSE,
+                   pageLength = -1), selection = "none")
+      
+      
+      output$grafiekExport <- downloadHandler(
+        filename = function() {
+          paste0(gsub(" ", "_", opties$Bank), '_aflostabel_grafiekdata.csv')
+        },
+        content = function(file) {
+          if(is.null(opgeslagenLeningen) || dim(opgeslagenLeningen)[1] == 0)
+            return(NULL)
+          
+          write.csv(x = plot1$tabel,file = file)
+        }
+      )
+      
     })
     
     
@@ -593,16 +691,89 @@ shinyServer(function(input, output, session) {
     toggle(id = "leningResultaat", condition = TRUE)
   })
   
+  # VergelijkLeningen ----
+  if(file.exists("opgeslagenAflosTabellen.RData")){
+    load("opgeslagenAflosTabellen.RData")
+  } else {
+    opgeslagenAflosTabellen <- list()
+  }
   
+  output$vergLenInputDT <- renderDataTable({
+    names(opgeslagenLeningen) <- mapNames(names(opgeslagenLeningen))
+    if(metrieken[1] %in% colnames(opgeslagenLeningen)){
+      return(opgeslagenLeningen[, -metrieken, with = FALSE])
+    } else {
+      return(opgeslagenLeningen)
+    }
+  },
+  options=list(autoWidth = TRUE,
+               scrollX=TRUE, 
+               paging = FALSE,
+               searching = FALSE,
+               pageLength = -1),
+  selection = 'none')
+  
+  observeEvent(input$vergLenButton, {
+    toggle(id = "lenBerekenBds", condition = TRUE)
+    toggle(id = "lenResultaat", condition = FALSE)
+    
+    vergelijking <- vergelijkLeningenShiny(opgeslagenLeningen = opgeslagenLeningen,
+                                           opgeslagenAflosTabellen = opgeslagenAflosTabellen)
+    
+    opgeslagenLeningen <<- vergelijking$opgeslagenLeningen
+    opgeslagenAflosTabellen <<- vergelijking$opgeslagenAflosTabellen
+  
+    output$vergLenOutputDT <- renderDataTable({
+      names(opgeslagenLeningen) <- mapNames(names(opgeslagenLeningen))
+      opgeslagenLeningen[, -c("Bank", metrieken), with = FALSE]
+    },
+    options=list(autoWidth = TRUE,
+                 scrollX=TRUE, 
+                 paging = FALSE,
+                 searching = FALSE,
+                 pageLength = -1),
+    selection = 'none')
+    
+    output$vergLenBeschrijving <- renderUI({
+      HTML(paste(vergelijking$beschrijving, collapse = "\n"))
+    })
+    
+    toggle(id = "lenBerekenBds", condition = FALSE)
+    toggle(id = "lenResultaat", condition = TRUE)
+    
+    
+    # Plot
+    output$vergGrafiekKolommenUI <- renderUI({
+      opties <- colnames(vergelijking$opgeslagenAflosTabellen[[1]])
+      if(length(grep("inflatie", opties)) > 0)
+        opties <- opties[-grep("inflatie", opties)]
+      opties <- opties[!opties %in% c("maand", "lening_open", "vermogenVerschil")]
+      selectInput("vergGrafiekKolommen", "Plot volgende kolommen: ", 
+                  choices = mapNames(opties), multiple = TRUE, selected = mapNames(opties))
+    })
+    
+    output$vergGrafiekStartDatumUI <- renderUI({
+      opties <- format(
+        as.Date(Sys.time())-days(as.integer(format(Sys.time(), "%d"))-1) + months(-12:13),
+        format = "%Y-%m"
+      )
+      selectInput("vergGrafiekDatum", "Maand van de eerste betaling:", 
+                  choices = opties, selected = opties[13], multiple = FALSE)
+    })
+    
+    plot <- vergLeningGrafiek(opgeslagenAflosTabellen = opgeslagenAflosTabellen,
+                              kolom = "aflossing")
+  })
   # Toggle off all errorDivs
   for(errorDiv in c("lenBedrError", "lenRVError", "lenJaarError",
                     "lenVarTypeError",
-                    "lenSamError", "lenBankError",
+                    "lenSamError", "lenBankError","lenBankError2", "lenBankSucces",
                     "lenKost1Error", "lenKostMError", "lenKostJError", "lenInflError",
                     "lenVermStartError", "lenVermInkError", "lenVermBelPercError",
                     "lenVermBelOpbrPercError",
                     "leningenImpError",
                     "leningBerekenBds", "leningResultaat",
-                    "lenBereken2Error"))
+                    "lenBereken2Error",
+                    "lenBerekenBds", "lenResultaat"))
     toggle(id = errorDiv, condition = FALSE)
 })

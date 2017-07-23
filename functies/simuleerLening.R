@@ -39,6 +39,7 @@ lening$aflostabel <- kostenVermogenToevoegen(lening$aflostabel, opties)
   
   return(list(aflostabel = lening$aflostabel,
               beschrijving = beschrijfLening(lening, opties, berekeningen),
+              berekeningen = berekeningen,
               opties = opties))
 }
 
@@ -186,6 +187,7 @@ kostenVermogenToevoegen <- function(aflostabel, opties){
   
   maxAflossing <- max(aflostabel$aflossing)
   belegOpbrengstMaand <- (1+opties$Vermogen_Opbrengst/100)^(1/12) -1
+  vermogenVerschil <- 0
   vermogen <- opties$Vermogen_Start
   interest <- 0
   
@@ -208,7 +210,7 @@ kostenVermogenToevoegen <- function(aflostabel, opties){
   for(mnd in 1:dim(aflostabel)[1]){
     interest[mnd+1] <- vermogen[mnd]*opties$Vermogen_Beleggingspercentage/100*belegOpbrengstMaand
     # Nieuw vermogen volgende maand = vermogen vorige maand
-    vermogen[mnd+1] <- vermogen[mnd] + 
+    vermogenVerschil[mnd+1] <- 
       # Maandelijks sparen
       maandelijksSparen[mnd] + 
       # Interest van beleggingen
@@ -217,7 +219,9 @@ kostenVermogenToevoegen <- function(aflostabel, opties){
       (maxAflossing - aflostabel[maand == mnd]$aflossing) -
       # Extra kosten lening
       extraKosten[mnd]
+    vermogen[mnd+1] <- vermogen[mnd] + vermogenVerschil[mnd+1]
   }
+  aflostabel$vermogenVerschil <- round(vermogenVerschil[-1], 2)
   aflostabel$vermogen <- round(vermogen[-1], 2)
   aflostabel$beleggen_interest <- ifelse(round(interest[-1], 2)>0, round(interest[-1], 2), 0) 
   

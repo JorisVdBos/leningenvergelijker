@@ -1,3 +1,4 @@
+# Header ----
 dbHeader <- dashboardHeader(title = "Leningen vergelijker")
 
 sidebar <- dashboardSidebar(
@@ -14,6 +15,7 @@ sidebar <- dashboardSidebar(
   )
 )
 
+# Body ----
 body <- dashboardBody(
   shinyjs::useShinyjs(),
   tags$head(
@@ -29,7 +31,7 @@ body <- dashboardBody(
       #p("Een huis of appartement gekocht? Proficiat! Maar hola, de zoektocht is nog niet afgelopen! Een goede lening vinden kan je duizenden euro's besparen, dus een nieuwe zoektocht gaat van start. Algouw ligt je keukentafel vol met papieren met letterlijk duizenden cijfertjes. Bank A geeft een betere rentevoet, maarja bank B heeft dan weer goedkopere verzekeringen! Economisch gezien moet je denken aan inflatie en zo weinig mogelijk lenen, maar fiscaal gezien moet je dan weer zo lang mogelijk lenen. Vriend 1 zegt dit en vriend 2 zegt dat, maar welke lening is nu de beste?"),
       p("Om leningen te vergelijken begonnen wij een excelbestand waar we alle leningvoorstellen verzamelden. Zelfs met enkele excel functies kregen we moeilijk vat op de waarde van de verschillende voorstellen en moesten we toch nog vaak teruggrijpen naar de aflostabellen van de banken. Daarom schreef ik voor mezelf en mijn partner een applicatie in de computertaal 'R' die leningen simuleerde. Zo kon ik ook vragen beantwoorden zoals wat met inflatie, bank kosten, beleggingen, ..."),
       p("Hieronder zie je een voorbeeld van een verzameling bankvoorstellen. Aflostabellen en grafieken bekom je door een lening aan te klikken en op de knop 'Start simulatie' te klikken. In de tab 'nieuwe lening' kan je zelf leningen aan deze tabel toevoegen. Zo kan je je verzameling bankvoorstellen hier aanmaken, exporteren en opnieuw inladen zoveel je wilt!"),
-      # Invoer simulator
+      # Invoer simulator ----
       tabsetPanel(
         tabPanel(
           "Opgeslagen leningen",
@@ -98,6 +100,7 @@ body <- dashboardBody(
             )
           )
         ),
+        # Nieuwe lening ----
         tabPanel(
           "Nieuwe lening",
           wellPanel(
@@ -246,15 +249,20 @@ body <- dashboardBody(
                         "Naam van de bank:"),
               div(id = "lenBankError",
                   p(em(HTML("<font color='red'>Gelieve een naam in te voeren.</font>")))),
+              div(id = "lenBankError2",
+                  p(em(HTML("<font color='red'>Deze naam bestaat al!</font>")))),
               actionButton(
                 "lenOpslaan",
                 "Opslaan"),
+              div(id = "lenBankSucces",
+                  p(em(HTML("<font color='green'>Je lening werd aan de tabel toegevoegd!</font>")))),
               br(),
               br()
             )
           )
         )
       ),
+      # Lening resultaat ----
       fluidPage(
         div(id = "leningBerekenBds",
             "Berekenen..."),
@@ -266,7 +274,11 @@ body <- dashboardBody(
           tabsetPanel(
             tabPanel(
               "Aflostabel",
-              dataTableOutput("lenAflossingstabel")
+              dataTableOutput("lenAflossingstabel"),
+              downloadButton(
+                "lenAflossingstabelExport",
+                "Exporteer aflossingstabel (.csv)"
+              )
             ),
             tabPanel(
               "Grafiek",
@@ -279,16 +291,57 @@ body <- dashboardBody(
                 checkboxInput("grafiekCumulatief", "Cumulatief")
               ),
               wellPanel(
-                showOutput("grafiekPlot", lib = "morris")
+                plotOutput("grafiekPlot")
+              ),
+              dataTableOutput("grafiekTabel"),
+              downloadButton(
+                "grafiekExport",
+                "Exporteer grafiek data (.csv)"
               )
             )
           )
         )
       )
     ),
+    # Vergelijk leningen ----
     tabItem(
       tabName = "vergLen",
-      h1("Simuleer verschillende leningen")
+      h1("Vergelijk leningen"),
+      p("Op deze pagina worden al je ingegeven leningen naast elkaar gelegd en vergeleken."),
+      wellPanel(
+        dataTableOutput("vergLenInputDT"),
+        br(),
+        actionButton("vergLenButton", label = "Start met rekenen!", styleclass = "success")
+      ),
+      
+      div(id = "lenBerekenBds",
+          "Berekenen..."),
+      div(
+        id = "lenResultaat",
+        wellPanel(
+          uiOutput("vergLenBeschrijving")
+        ),
+        tabsetPanel(
+          tabPanel(
+            "Tabel",
+            dataTableOutput("vergLenOutputDT")
+          ),
+          tabPanel(
+            "Grafiek",
+            wellPanel(
+              uiOutput("vergGrafiekKolommenUI"),
+              uiOutput("vergGrafiekStartDatumUI"), 
+              checkboxInput("vergGrafiekInflatie", "Inflatie inrekenen"),
+              sliderInput("vergGrafiekInflatiePerc", "Inflatie percentage:", 
+                          min = -10, max = 10, value = 2, step = 0.1),
+              checkboxInput("vergGrafiekCumulatief", "Cumulatief")
+            ),
+            wellPanel(
+              plotOutput("vergGrafiekPlot")
+            )
+          )
+        )
+      )
     ),
     tabItem(
       tabName = "meerInfo",
