@@ -465,9 +465,10 @@ shinyServer(function(input, output, session) {
         'aflostabel.csv'
       },
       content = function(file) {
-        names(berekendeLening$aflostabel) <- mapNames(names(berekendeLening$aflostabel))
+        output <- berekendeLening$aflostabel
+        names(output) <- mapNames(names(output))
         
-        write.csv(x = berekendeLening$aflostabel, file = file)
+        write.csv(x = output, file = file)
       }
     )
     
@@ -609,7 +610,7 @@ shinyServer(function(input, output, session) {
     rownames = FALSE,
     selection = 'none')
     
-    outputglenAflossingstabelExport <- downloadHandler(
+    output$lenAflossingstabelExport <- downloadHandler(
       filename = function() {
         paste0(gsub(" ", "_", opties$Bank), '_aflostabel.csv')
       },
@@ -713,6 +714,8 @@ shinyServer(function(input, output, session) {
                pageLength = -1),
   selection = 'none')
   
+  leningVergelijking <- NULL
+  
   observeEvent(input$vergLenButton, {
     toggle(id = "lenBerekenBds", condition = TRUE)
     toggle(id = "lenResultaat", condition = FALSE)
@@ -724,8 +727,9 @@ shinyServer(function(input, output, session) {
     opgeslagenAflosTabellen <<- vergelijking$opgeslagenAflosTabellen
   
     output$vergLenOutputDT <- renderDataTable({
-      names(opgeslagenLeningen) <- mapNames(names(opgeslagenLeningen))
-      opgeslagenLeningen[, -c("Bank", metrieken), with = FALSE]
+      output <- opgeslagenLeningen[, c("Bank", metrieken), with = FALSE]
+      names(output) <- mapNames(names(output))
+      output
     },
     options=list(autoWidth = TRUE,
                  scrollX=TRUE, 
@@ -733,6 +737,18 @@ shinyServer(function(input, output, session) {
                  searching = FALSE,
                  pageLength = -1),
     selection = 'none')
+    
+    output$vergLenAflossingstabelExport <- downloadHandler(
+      filename = function() {
+        'VergelijkLeningen.csv'
+      },
+      content = function(file) {
+        output <- opgeslagenLeningen
+        names(output) <- mapNames(names(output))
+        
+        write.csv(x = output, file = file)
+      }
+    )
     
     output$vergLenBeschrijving <- renderUI({
       HTML(paste(vergelijking$beschrijving, collapse = "\n"))
@@ -749,7 +765,7 @@ shinyServer(function(input, output, session) {
         opties <- opties[-grep("inflatie", opties)]
       opties <- opties[!opties %in% c("maand", "lening_open", "vermogenVerschil")]
       selectInput("vergGrafiekKolommen", "Plot volgende kolommen: ", 
-                  choices = mapNames(opties), multiple = TRUE, selected = mapNames(opties))
+                  choices = mapNames(opties), multiple = FALSE, selected = mapNames(opties)[1])
     })
     
     output$vergGrafiekStartDatumUI <- renderUI({
@@ -761,9 +777,44 @@ shinyServer(function(input, output, session) {
                   choices = opties, selected = opties[13], multiple = FALSE)
     })
     
-    plot <- vergLeningGrafiek(opgeslagenAflosTabellen = opgeslagenAflosTabellen,
-                              kolom = "aflossing")
+    observeEvent(c(input$vergGrafiekDatum, input$vergGrafiekKolommen, input$vergGrafiekInflatie,  
+                   input$vergGrafiekInflatiePerc, input$vergGrafiekCumulatief), {
+       if(is.null(input$vergGrafiekDatum))
+         return(NULL)
+       
+       leningVergelijking <<- vergLeningGrafiek(opgeslagenAflosTabellen = opgeslagenAflosTabellen, 
+                                  kolom = unMapNames(input$vergGrafiekKolommen),
+                                  startDate = input$vergGrafiekDatum, 
+                                  inflatie = input$vergGrafiekInflatie,
+                                  inflatiePerc = input$vergGrafiekInflatiePerc, 
+                                  cumulatief = input$vergGrafiekCumulatief)
+       output$vergGrafiekPlot <- renderPlot({
+         leningVergelijking$plot
+       })
+       
+       output$vergGrafiekTabel <- renderDataTable({
+         leningVergelijking$tabel
+       },
+       options=list(autoWidth = TRUE,
+                    scrollX=TRUE, 
+                    paging = FALSE,
+                    searching = FALSE,
+                    pageLength = -1)
+       , selection = "none")
+     })
+    
+    output$vergGrafiekExport <- downloadHandler(
+      filename = function() {
+        paste0('vergelijkingstabel', input$vergGrafiekKolommen,'.csv')
+      },
+      content = function(file) {
+        output <- leningVergelijking$tabel
+        
+        write.csv(x = output, file = file)
+      }
+    )
   })
+  
   # Toggle off all errorDivs
   for(errorDiv in c("lenBedrError", "lenRVError", "lenJaarError",
                     "lenVarTypeError",

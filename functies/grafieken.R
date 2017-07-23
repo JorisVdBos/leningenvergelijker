@@ -65,9 +65,17 @@ leningGrafiek <- function(aflosTabel,
 
 # For testing: load("testVergLeningGrafiek.RData")
 vergLeningGrafiek <- function(opgeslagenAflosTabellen, 
-                              kolom){
+                              kolom,
+                              startDate,
+                              inflatie = FALSE, 
+                              inflatiePerc = 0,
+                              cumulatief = FALSE){
   if(is.null(opgeslagenAflosTabellen))
     return(NULL)
+  
+  if(!cumulatief && kolom == "vermogen"){
+    kolom <- "vermogenVerschil"
+  }
   
   leningen <- names(opgeslagenAflosTabellen)
   
@@ -84,14 +92,38 @@ vergLeningGrafiek <- function(opgeslagenAflosTabellen,
     }
   }
   
+  plotTitle <- mapNames(kolom)
+  
+  if(cumulatief && kolom != "vermogen"){
+    data <- data[order(lening, maand)][, .(maand = maand, metriek = cumsum(metriek)), 
+                                         by = list(lening)]
+    
+    plotTitle <- paste("Cumulatief", plotTitle)
+  }
+  
+  if(inflatie){
+    inflatieMaand <- (1+inflatiePerc/100)^(1/12)
+    
+    data <- data[order(lening, maand)][, .(maand = maand, metriek = metriek/inflatieMaand^maand), 
+                                       by = list(lening)]
+    
+    plotTitle <- paste0(plotTitle, ", inflatie ", inflatiePerc, "%")
+  }
+  
+  # Months
+  data$maand <- as.Date(paste0(startDate, "-01"), format = "%Y-%m-%d") +
+    months(data$maand - 1)
+  
+  # Data table output
   dataCast <- dcast(data, maand ~ lening, value.var = "metriek")
   
   # Plot
   colnames(data)[which(colnames(data) == "metriek")] <- kolom
   plot <- ggplot(data) + 
     geom_line(aes_string("maand", kolom, col = "lening")) +
-    scale_y_continuous(name ="Euro", labels = comma)
+    scale_y_continuous(name ="Euro", labels = comma) +
+    labs(title = plotTitle)
   
   return(list(plot = plot,
-              tabel = data))
+              tabel = dataCast))
 }

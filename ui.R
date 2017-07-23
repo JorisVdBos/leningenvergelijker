@@ -311,7 +311,7 @@ body <- dashboardBody(
       wellPanel(
         dataTableOutput("vergLenInputDT"),
         br(),
-        actionButton("vergLenButton", label = "Start met rekenen!", styleclass = "success")
+        actionButton("vergLenButton", label = "Start vergelijking!", styleclass = "success")
       ),
       
       div(id = "lenBerekenBds",
@@ -324,7 +324,11 @@ body <- dashboardBody(
         tabsetPanel(
           tabPanel(
             "Tabel",
-            dataTableOutput("vergLenOutputDT")
+            dataTableOutput("vergLenOutputDT"),
+            downloadButton(
+              "vergLenAflossingstabelExport",
+              "Exporteer vergelijkingstabel (.csv)"
+            )
           ),
           tabPanel(
             "Grafiek",
@@ -338,6 +342,11 @@ body <- dashboardBody(
             ),
             wellPanel(
               plotOutput("vergGrafiekPlot")
+            ),
+            dataTableOutput("vergGrafiekTabel"),
+            downloadButton(
+              "vergGrafiekExport",
+              "Exporteer grafiek data (.csv)"
             )
           )
         )
