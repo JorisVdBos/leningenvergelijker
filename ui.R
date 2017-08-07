@@ -355,16 +355,20 @@ body <- dashboardBody(
     tabItem(
       tabName = "meerInfo",
       h1("Meer informatie over deze applicatie"),
-      fluidRow(HTML(paste0(
-        "<p>Deze applicatie werd gebouwd door mij, <a href=\"mailto:joris.bdbossche@gmail.com\">Joris Van den Bossche</a>, geïnspireerd door mijn eigen zoektocht naar een lening! Alle vragen of opmerkingen over deze applicatie zijn uiterst welkom.</p>",
-        "<p>De code van deze applicatie kan je terugvinden op  <a href=\"https://github.com/JorisVdBos/leningenvergelijker\">mijn github account</a>.</p>",
-        "<p>Mijn LinkedIn:</p>",
-        "<script src=\"//platform.linkedin.com/in.js\" type=\"text/javascript\"></script>
-<script type=\"IN/MemberProfile\" data-id=\"https://www.linkedin.com/in/joris-van-den-bossche-8a12b943\" data-format=\"inline\" data-related=\"false\"></script>",
-        "<p>Volg mij op Twitter:<br>
+      fluidPage(
+        fluidRow(HTML(paste0(
+          "<p>Deze applicatie werd gebouwd in de zomer van 2017 door mij, Joris Van den Bossche, geïnspireerd door mijn eigen zoektocht naar een lening! Alle vragen of opmerkingen over deze applicatie zijn uiterst welkom. Contacteer mij via <a href=\"mailto:joris.bdbossche@gmail.com\">email</a> of via onderstaande kanalen.</p>",
+          "<p>Alle code van deze applicatie kan je terugvinden <a href=\"https://github.com/JorisVdBos/leningenvergelijker\">mijn github account</a>.</p>",
+          "<p>Mijn LinkedIn:</p>",
+          "<br>",
+          "<script src=\"//platform.linkedin.com/in.js\" type=\"text/javascript\"></script>
+          <script type=\"IN/MemberProfile\" data-id=\"https://www.linkedin.com/in/joris-van-den-bossche-8a12b943\" data-format=\"inline\" data-related=\"false\"></script>",
+          "<br>",
+          "<p>Volg mij op Twitter:<br>
           <a href=\"https://twitter.com/Joris_VdB_\" class=\"twitter-follow-button\" data-show-count=\"false\" data-size=\"large\">Follow @Joris_VdB_</a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script></p>
-"
-      )))
+          "
+        )))
+      )
     )
   )
 )
