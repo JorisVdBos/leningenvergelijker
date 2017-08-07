@@ -22,3 +22,8 @@ for (script in list.files("functies")) {
 metrieken <- c('Totaal_Afbetalingen', 'Totaal_Interesten', 'Totaal_Extra_Kosten', 
                'Vermogen_EindeLening', 'Vermogen_EindeLening_Inflatie', 
                'Vermogen_Belegging_Opbrengsten', 'Vermogen_Belegging_Opbrengsten_Inflatie')
+options(scipen = 999)
+
+
+# Devtools
+testing <- FALSE

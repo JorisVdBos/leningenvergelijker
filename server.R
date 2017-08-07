@@ -83,8 +83,14 @@ shinyServer(function(input, output, session) {
   
   toonLeningSamenstelling <- function(){
     output$lenInputDT <- renderDataTable({
-      names(leningSamenstelling) <- mapNames(names(leningSamenstelling))
-      leningSamenstelling
+      if(is.null(leningSamenstelling))
+        return(NULL)
+      
+      output <- leningSamenstelling
+      if(sum(metrieken %in% colnames(output)) > 0)
+        output <- opgeslagenLeningen[, -c(metrieken), with = FALSE]
+      names(output) <- mapNames(names(output))
+      output
     },
     options=list(autoWidth = TRUE,
                  scrollX=TRUE, 
@@ -110,8 +116,8 @@ shinyServer(function(input, output, session) {
   
   # Leningen opslaan
   opgeslagenLeningen <- NULL
-  if(file.exists("opgeslagenLeningenVoorbeelden.feather"))
-    opgeslagenLeningen <- data.table(read_feather(path = "opgeslagenLeningenVoorbeelden.feather"))
+  if(file.exists("defaults/opgeslagenLeningenVoorbeelden.feather"))
+    opgeslagenLeningen <- data.table(read_feather(path = "defaults/opgeslagenLeningenVoorbeelden.feather"))
   
   observeEvent(input$lenOpslaan, {
     toggle(id = "lenBankSucces", condition = FALSE)
@@ -218,7 +224,7 @@ shinyServer(function(input, output, session) {
       "Vermogen_Maandelijsk_Sparen" = lenVermInk,
       "Vermogen_Beleggingspercentage" = lenVermBelPerc,
       "Vermogen_Opbrengst" = lenVermBelOpbrPerc
-    ))
+    ), fill = TRUE)
     
     toggle(id = "lenBankSucces", condition = TRUE)
     
@@ -232,8 +238,11 @@ shinyServer(function(input, output, session) {
     }
     
     output$leningenDT <- renderDataTable({
-      names(opgeslagenLeningen) <- mapNames(names(opgeslagenLeningen))
-      opgeslagenLeningen
+      output <- opgeslagenLeningen
+      if(sum(metrieken %in% colnames(output)) > 0)
+        output <- opgeslagenLeningen[, -c(metrieken), with = FALSE]
+      names(output) <- mapNames(names(output))
+      output
     },
     options=list(paging = FALSE,
                  deferRender = FALSE,
@@ -248,7 +257,7 @@ shinyServer(function(input, output, session) {
     # Testing:
     # if(!is.null(opgeslagenLeningen) &&
     #    dim(opgeslagenLeningen)[1] > 0)
-    #   write_feather(x = opgeslagenLeningen, path = "opgeslagenLeningenVoorbeelden.feather")
+    #   write_feather(x = opgeslagenLeningen, path = "defaults/opgeslagenLeningenVoorbeelden.feather")
     toggle(id = "leningenVerwAlles2Div", condition = FALSE)
   }
   toonOpgeslagenLeningen()
@@ -450,8 +459,9 @@ shinyServer(function(input, output, session) {
     
     # Leningsimulaties output:
     output$lenAflossingstabel <- renderDataTable({
-      names(berekendeLening$aflostabel) <- mapNames(names(berekendeLening$aflostabel))
-      berekendeLening$aflostabel
+      output <- berekendeLening$aflostabel
+      names(output) <- mapNames(names(output))
+      output
     }, options = list(deferRender = FALSE,
                       info = FALSE,
                       searching = FALSE,
@@ -600,8 +610,9 @@ shinyServer(function(input, output, session) {
     
     # Leningsimulaties output:
     output$lenAflossingstabel <- renderDataTable({
-      names(berekendeLening$aflostabel) <- mapNames(names(berekendeLening$aflostabel))
-      berekendeLening$aflostabel
+      output <- berekendeLening$aflostabel
+      names(output) <- mapNames(names(output))
+      output
     }, options = list(deferRender = FALSE,
                       info = FALSE,
                       searching = FALSE,
@@ -693,19 +704,20 @@ shinyServer(function(input, output, session) {
   })
   
   # VergelijkLeningen ----
-  if(file.exists("opgeslagenAflosTabellen.RData")){
-    load("opgeslagenAflosTabellen.RData")
+  if(file.exists("defaults/opgeslagenAflosTabellen.RData")){
+    load("defaults/opgeslagenAflosTabellen.RData")
   } else {
     opgeslagenAflosTabellen <- list()
   }
   
   output$vergLenInputDT <- renderDataTable({
-    names(opgeslagenLeningen) <- mapNames(names(opgeslagenLeningen))
-    if(metrieken[1] %in% colnames(opgeslagenLeningen)){
-      return(opgeslagenLeningen[, -metrieken, with = FALSE])
-    } else {
-      return(opgeslagenLeningen)
-    }
+    
+    output <- opgeslagenLeningen
+    if(metrieken[1] %in% colnames(output)){
+      output <- output[, -metrieken, with = FALSE]
+    } 
+    names(output) <- mapNames(names(output))
+    output
   },
   options=list(autoWidth = TRUE,
                scrollX=TRUE, 
@@ -714,17 +726,27 @@ shinyServer(function(input, output, session) {
                pageLength = -1),
   selection = 'none')
   
+  leningVergelijkingPlot <- NULL
   leningVergelijking <- NULL
   
   observeEvent(input$vergLenButton, {
     toggle(id = "lenBerekenBds", condition = TRUE)
     toggle(id = "lenResultaat", condition = FALSE)
     
-    vergelijking <- vergelijkLeningenShiny(opgeslagenLeningen = opgeslagenLeningen,
+    leningVergelijking <<- vergelijkLeningenShiny(opgeslagenLeningen = opgeslagenLeningen,
                                            opgeslagenAflosTabellen = opgeslagenAflosTabellen)
     
-    opgeslagenLeningen <<- vergelijking$opgeslagenLeningen
-    opgeslagenAflosTabellen <<- vergelijking$opgeslagenAflosTabellen
+    if(testing)
+      save(leningVergelijking, file = "testing/leningVergelijking.RData")
+    
+    opgeslagenLeningen <<- leningVergelijking$opgeslagenLeningen
+    
+    # Testing
+    # if(!is.null(opgeslagenLeningen) &&
+    #    dim(opgeslagenLeningen)[1] > 0)
+    #   write_feather(x = opgeslagenLeningen, path = "defaults/opgeslagenLeningenVoorbeelden.feather")
+    
+    opgeslagenAflosTabellen <<- leningVergelijking$opgeslagenAflosTabellen
   
     output$vergLenOutputDT <- renderDataTable({
       output <- opgeslagenLeningen[, c("Bank", metrieken), with = FALSE]
@@ -751,7 +773,7 @@ shinyServer(function(input, output, session) {
     )
     
     output$vergLenBeschrijving <- renderUI({
-      HTML(paste(vergelijking$beschrijving, collapse = "\n"))
+      HTML(paste(leningVergelijking$beschrijving, collapse = "\n"))
     })
     
     toggle(id = "lenBerekenBds", condition = FALSE)
@@ -760,7 +782,7 @@ shinyServer(function(input, output, session) {
     
     # Plot
     output$vergGrafiekKolommenUI <- renderUI({
-      opties <- colnames(vergelijking$opgeslagenAflosTabellen[[1]])
+      opties <- colnames(leningVergelijking$opgeslagenAflosTabellen[[1]])
       if(length(grep("inflatie", opties)) > 0)
         opties <- opties[-grep("inflatie", opties)]
       opties <- opties[!opties %in% c("maand", "lening_open", "vermogenVerschil")]
@@ -782,18 +804,32 @@ shinyServer(function(input, output, session) {
        if(is.null(input$vergGrafiekDatum))
          return(NULL)
        
-       leningVergelijking <<- vergLeningGrafiek(opgeslagenAflosTabellen = opgeslagenAflosTabellen, 
+       leningVergelijkingPlot <<- vergLeningGrafiek(opgeslagenAflosTabellen = opgeslagenAflosTabellen, 
                                   kolom = unMapNames(input$vergGrafiekKolommen),
                                   startDate = input$vergGrafiekDatum, 
                                   inflatie = input$vergGrafiekInflatie,
                                   inflatiePerc = input$vergGrafiekInflatiePerc, 
                                   cumulatief = input$vergGrafiekCumulatief)
+       
+       if(testing){
+         opgeslagenAflosTabellen = opgeslagenAflosTabellen
+         kolom = unMapNames(input$vergGrafiekKolommen)
+         startDate = input$vergGrafiekDatum
+         inflatie = input$vergGrafiekInflatie
+         inflatiePerc = input$vergGrafiekInflatiePerc
+         cumulatief = input$vergGrafiekCumulatief
+         save(opgeslagenAflosTabellen,
+              kolom,
+              startDate, inflatie, inflatiePerc, cumulatief,
+              leningVergelijkingPlot, file = "testing/leningVergelijkingPlot.RData")
+       }
+       
        output$vergGrafiekPlot <- renderPlot({
-         leningVergelijking$plot
+         leningVergelijkingPlot$plot
        })
        
        output$vergGrafiekTabel <- renderDataTable({
-         leningVergelijking$tabel
+         leningVergelijkingPlot$tabel
        },
        options=list(autoWidth = TRUE,
                     scrollX=TRUE, 
@@ -808,7 +844,7 @@ shinyServer(function(input, output, session) {
         paste0('vergelijkingstabel', input$vergGrafiekKolommen,'.csv')
       },
       content = function(file) {
-        output <- leningVergelijking$tabel
+        output <- leningVergelijkingPlot$tabel
         
         write.csv(x = output, file = file)
       }

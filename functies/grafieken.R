@@ -24,8 +24,9 @@ leningGrafiek <- function(aflosTabel,
     }
   }
   
-  if(is.null(kolommen))
+  if(is.null(kolommen) || !kolommen %in% colnames(aflosTabel))
     return(NULL)
+  
   if(inflatie){
     inflatieMaand <- (1+inflatiePerc/100)^(1/12)
     
@@ -57,7 +58,8 @@ leningGrafiek <- function(aflosTabel,
   names(aflosTabelMelt)[which(names(aflosTabelMelt) == "variable")] <- "Variabele"
   
   plot <- ggplot(aflosTabelMelt) + 
-    geom_line(aes(maand, Euro, col = Variabele))
+    geom_line(aes(maand, Euro, col = Variabele)) +
+    scale_y_continuous(name ="Euro", labels = comma)
   
   return(list(plot = plot,
               tabel = aflosTabel))
@@ -85,7 +87,7 @@ vergLeningGrafiek <- function(opgeslagenAflosTabellen,
     leningData <- data.table(lening = lening, 
                              maand = opgeslagenAflosTabellen[[lening]]$maand, 
                              metriek = opgeslagenAflosTabellen[[lening]][[kolom]])
-    if(length(unique(leningData$metriek)) > 2){
+    if(kolom != "aflossing" && length(unique(leningData$metriek)) > 2){
       data <- rbind(data, leningData)
     } else {
       nietMeegerekendeLeningen <- c(nietMeegerekendeLeningen, lening)
