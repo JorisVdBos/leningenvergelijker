@@ -3,13 +3,16 @@ dbHeader <- dashboardHeader(title = "Leningen vergelijker")
 
 sidebar <- dashboardSidebar(
   sidebarMenu(
+    menuItem(text     = "Inleiding", 
+             tabName  = "inleiding", 
+             icon     = icon("home")),
     menuItem(text     = "Simuleer lening", 
              tabName  = "simLen", 
              icon     = icon("calculator")),
     menuItem(text     = "Vergelijk leningen", 
              tabName  = "vergLen", 
              icon     = icon("line-chart")),
-    menuItem(text     = "Meer info", 
+    menuItem(text     = "Meer informatie", 
              tabName  = "meerInfo", 
              icon     = icon("question"))
   )
@@ -24,12 +27,17 @@ body <- dashboardBody(
     tags$link(rel = "stylesheet", type = "text/css", href = "AdminLTE-2.0.6/_all-skins.min.css")
   ),
   tabItems(
+    tabItem(
+      tabName = "inleiding",
+      h1("Welkom!"),
+      p("Welkom op mijn applicatie! Als je hier bent, wil dat zeggen dat je een lening wil aangaan bij de bank. Net als jij, wou ik de beste lening op de markt te pakken krijgen en samen met mijn partner hebben we verschillende banken afgeschuimd naar informatie. Om de leningen van de verschillende banken te vergelijken, begonnen wij een excelbestand waar we alle leningvoorstellen verzamelden. Zelfs met enkele excel truukjes kregen we moeilijk vat op de waarde van de verschillende voorstellen en moesten we toch nog vaak teruggrijpen naar de aflostabellen van de banken. Daarom schreef ik voor mezelf en mijn partner een applicatie in de computertaal 'R' die leningen simuleerde. Zo kon ik ook vragen beantwoorden in verband met inflatie, verzekeringskosten en beleggen."),
+      p("Om te beginnen, ga naar het tabblad 'Simuleer lening' om leningen toe te voegen en aflostabellen te simuleren. Om de verschillende leningen naast elkaar te vergelijken, ga naar het tabblad 'Vergelijk leningen'. Om meer over deze applicatie te weten te komen, ga naar het tabblad 'Meer informatie'. Veel succes met de zoektocht naar je perfecte lening!")
+    ),
     # Lening simulatie ----
     tabItem(
       tabName = "simLen",
       h1("Simuleer een lening"),
       #p("Een huis of appartement gekocht? Proficiat! Maar hola, de zoektocht is nog niet afgelopen! Een goede lening vinden kan je duizenden euro's besparen, dus een nieuwe zoektocht gaat van start. Algouw ligt je keukentafel vol met papieren met letterlijk duizenden cijfertjes. Bank A geeft een betere rentevoet, maarja bank B heeft dan weer goedkopere verzekeringen! Economisch gezien moet je denken aan inflatie en zo weinig mogelijk lenen, maar fiscaal gezien moet je dan weer zo lang mogelijk lenen. Vriend 1 zegt dit en vriend 2 zegt dat, maar welke lening is nu de beste?"),
-      p("Om leningen te vergelijken, begonnen wij een excelbestand waar we alle leningvoorstellen verzamelden. Zelfs met enkele excel functies kregen we moeilijk vat op de waarde van de verschillende voorstellen en moesten we toch nog vaak teruggrijpen naar de aflostabellen van de banken. Daarom schreef ik voor mezelf en mijn partner een applicatie in de computertaal 'R' die leningen simuleerde. Zo kon ik ook vragen beantwoorden in verband met inflatie, verzekeringskosten en beleggen."),
       h2("Voorbeeld"),
       p("Onderaan zie je al drie leningen als voorbeeld ingevuld. Zij stemmen overeen met het volgende volledig fictieve voorbeeld:"),
       p("Tine heeft een appartement gekocht en wil een lening van 150.000 euro aangaan over 25 jaar. Ze verdient 1500 euro netto per maand en houdt 800 euro per maand over voor de lening en om te sparen. Na de aankoop van het huis heeft ze nog 3.000 euro aan spaargeld over, wat ze voor 65% in een beleggingsportefeille houdt. De laatste jaren brachten haar beleggingen haar een gemiddelde rente van 5% per jaar op."),
