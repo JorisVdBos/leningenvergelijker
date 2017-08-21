@@ -34,7 +34,7 @@ body <- dashboardBody(
       p("Om te beginnen, ga naar het tabblad 'Simuleer lening' om leningen toe te voegen en aflostabellen te simuleren. Om de verschillende leningen naast elkaar te vergelijken, ga naar het tabblad 'Vergelijk leningen'. Om meer over deze applicatie te weten te komen, ga naar het tabblad 'Meer informatie'. Veel succes met de zoektocht naar je perfecte lening!"),
       h2("Privacy"),
       p("Geen enkele informatie ingegeven in deze applicatie-website wordt ergens opgeslagen. Hij maakt geen gebruik van cookies of iets dergelijks. Om je gegevens te bewaren, kan je je bankvoorstellen exporteren in een '.feather' bestand en opslaan op je computer. Later kan je dit bestand opnieuw inladen om verder te werken. Opgepast: Dit betekent ook dat als je de pagina ververst, alle ingevoerde gegevens worden gewist!"),
-      p("De code van deze applicatie is volledig openbaar en terug te vinden op <a href=\"https://github.com/JorisVdBos/leningenvergelijker\">mijn github account</a>")
+      HTML("<p>De code van deze applicatie is volledig openbaar en terug te vinden op <a href=\"https://github.com/JorisVdBos/leningenvergelijker\">mijn github account</a>.</p>")
     ),
     # Lening simulatie ----
     tabItem(
