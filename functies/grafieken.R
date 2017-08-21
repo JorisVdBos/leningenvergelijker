@@ -7,11 +7,11 @@ leningGrafiek <- function(aflosTabel,
                           inflatiePerc = 0,
                           cumulatief = FALSE){
   
-  if(!cumulatief && "vermogen" %in% kolommen){
+  if(cumulatief && "vermogen" %in% kolommen){
     kolommen[which(kolommen == "vermogen")] <- "vermogenVerschil"
   }
   
-  if(cumulatief){
+  if(!cumulatief){
     for(kolom in kolommen){
       aflosTabel[, cumul := cumsum(get(kolom))]
       
@@ -59,7 +59,7 @@ leningGrafiek <- function(aflosTabel,
   
   plot <- ggplot(aflosTabelMelt) + 
     geom_line(aes(maand, Euro, col = Variabele)) +
-    scale_y_continuous(name ="Euro", labels = comma)
+    scale_y_continuous(name ="Euro", labels = comma) +labs(x = "Tijd")
   
   return(list(plot = plot,
               tabel = aflosTabel))
@@ -75,7 +75,7 @@ vergLeningGrafiek <- function(opgeslagenAflosTabellen,
   if(is.null(opgeslagenAflosTabellen))
     return(NULL)
   
-  if(!cumulatief && kolom == "vermogen"){
+  if(cumulatief && kolom == "vermogen"){
     kolom <- "vermogenVerschil"
   }
   
@@ -87,16 +87,19 @@ vergLeningGrafiek <- function(opgeslagenAflosTabellen,
     leningData <- data.table(lening = lening, 
                              maand = opgeslagenAflosTabellen[[lening]]$maand, 
                              metriek = opgeslagenAflosTabellen[[lening]][[kolom]])
-    if(kolom != "aflossing" && length(unique(leningData$metriek)) > 2){
-      data <- rbind(data, leningData)
-    } else {
+    if(kolom != "aflossing" && length(unique(leningData$metriek)) <= 2){
       nietMeegerekendeLeningen <- c(nietMeegerekendeLeningen, lening)
+    } else {
+      data <- rbind(data, leningData)
     }
   }
   
+  if(sum(nietMeegerekendeLeningen %in% leningen) == length(leningen))
+    return(NULL)
+  
   plotTitle <- mapNames(kolom)
   
-  if(cumulatief && kolom != "vermogen"){
+  if(!cumulatief && kolom != "vermogen"){
     data <- data[order(lening, maand)][, .(maand = maand, metriek = cumsum(metriek)), 
                                          by = list(lening)]
     
@@ -124,7 +127,7 @@ vergLeningGrafiek <- function(opgeslagenAflosTabellen,
   plot <- ggplot(data) + 
     geom_line(aes_string("maand", kolom, col = "lening")) +
     scale_y_continuous(name ="Euro", labels = comma) +
-    labs(title = plotTitle)
+    labs(title = plotTitle, x = "Tijd")
   
   return(list(plot = plot,
               tabel = dataCast))

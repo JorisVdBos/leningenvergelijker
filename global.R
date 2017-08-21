@@ -20,10 +20,11 @@ for (script in list.files("functies")) {
 
 # Parameters en opties
 metrieken <- c('Totaal_Afbetalingen', 'Totaal_Interesten', 'Totaal_Extra_Kosten', 
-               'Vermogen_EindeLening', 'Vermogen_EindeLening_Inflatie', 
-               'Vermogen_Belegging_Opbrengsten', 'Vermogen_Belegging_Opbrengsten_Inflatie')
+               'Vermogen_EindeLening', 
+               'Vermogen_Belegging_Opbrengsten')
 options(scipen = 999)
 
 
 # Devtools
 testing <- FALSE
+opslaanOpgeslagenLeningen <- TRUE

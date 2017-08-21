@@ -28,7 +28,7 @@ lening$aflostabel <- kostenVermogenToevoegen(lening$aflostabel, opties)
   
   # Berekeningen
   berekeningen <- data.table(
-    Totaal_Afbetalingen = sum(lening$aflostabel$aflossing),
+    Totaal_Afbetalingen = sum(lening$aflostabel$aflossing) + totaalExtraKosten,
     Totaal_Interesten = round(sum(lening$aflostabel$aflossing_interest), 2),
     Totaal_Extra_Kosten = round(totaalExtraKosten, 2),
     Vermogen_EindeLening = vermogenEindeLening,
@@ -212,7 +212,8 @@ kostenVermogenToevoegen <- function(aflostabel, opties){
     # Nieuw vermogen volgende maand = vermogen vorige maand
     vermogenVerschil[mnd+1] <- 
       # Maandelijks sparen
-      maandelijksSparen[mnd] + 
+      maandelijksSparen[mnd] -
+      aflostabel[maand == mnd]$aflossing + 
       # Interest van beleggingen
       ifelse(interest[mnd]>0, interest[mnd], 0) + 
       # Lagere aflossingen genereren meer vermogen

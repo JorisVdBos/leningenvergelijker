@@ -29,13 +29,36 @@ body <- dashboardBody(
       tabName = "simLen",
       h1("Simuleer een lening"),
       #p("Een huis of appartement gekocht? Proficiat! Maar hola, de zoektocht is nog niet afgelopen! Een goede lening vinden kan je duizenden euro's besparen, dus een nieuwe zoektocht gaat van start. Algouw ligt je keukentafel vol met papieren met letterlijk duizenden cijfertjes. Bank A geeft een betere rentevoet, maarja bank B heeft dan weer goedkopere verzekeringen! Economisch gezien moet je denken aan inflatie en zo weinig mogelijk lenen, maar fiscaal gezien moet je dan weer zo lang mogelijk lenen. Vriend 1 zegt dit en vriend 2 zegt dat, maar welke lening is nu de beste?"),
-      p("Om leningen te vergelijken begonnen wij een excelbestand waar we alle leningvoorstellen verzamelden. Zelfs met enkele excel functies kregen we moeilijk vat op de waarde van de verschillende voorstellen en moesten we toch nog vaak teruggrijpen naar de aflostabellen van de banken. Daarom schreef ik voor mezelf en mijn partner een applicatie in de computertaal 'R' die leningen simuleerde. Zo kon ik ook vragen beantwoorden zoals wat met inflatie, bank kosten, beleggingen, ..."),
-      p("Hieronder zie je een voorbeeld van een verzameling bankvoorstellen. Aflostabellen en grafieken bekom je door een lening aan te klikken en op de knop 'Start simulatie' te klikken. In de tab 'nieuwe lening' kan je zelf leningen aan deze tabel toevoegen. Zo kan je je verzameling bankvoorstellen hier aanmaken, exporteren en opnieuw inladen zoveel je wilt!"),
+      p("Om leningen te vergelijken, begonnen wij een excelbestand waar we alle leningvoorstellen verzamelden. Zelfs met enkele excel functies kregen we moeilijk vat op de waarde van de verschillende voorstellen en moesten we toch nog vaak teruggrijpen naar de aflostabellen van de banken. Daarom schreef ik voor mezelf en mijn partner een applicatie in de computertaal 'R' die leningen simuleerde. Zo kon ik ook vragen beantwoorden in verband met inflatie, verzekeringskosten en beleggen."),
+      h2("Voorbeeld"),
+      p("Onderaan zie je al drie leningen als voorbeeld ingevuld. Zij stemmen overeen met het volgende volledig fictieve voorbeeld:"),
+      p("Tine heeft een appartement gekocht en wil een lening van 150.000 euro aangaan over 25 jaar. Ze verdient 1500 euro netto per maand en houdt 800 euro per maand over voor de lening en om te sparen. Na de aankoop van het huis heeft ze nog 3.000 euro aan spaargeld over, wat ze voor 65% in een beleggingsportefeille houdt. De laatste jaren brachten haar beleggingen haar een gemiddelde rente van 5% per jaar op."),
+      p("In bank 1 wordt haar een lening op vaste rentevoet aangeboden aan 2,5%. In de bank 2 raden ze een lening aan 1,9% aan op variabele rentevoet, met herziening om de drie jaar. Hun verzekeringen zijn goedkoper dan bank 1. Bank 3 is duurder dan de andere twee banken, maar zij hebben lagere dossierkosten. Zij raden een gecombineerde lening aan, van 100.000 euro aan 2,5% vast over 25 jaar en 50.000 euro variabel aan 1,9%, herzien om de drie jaar over 15 jaar."),
+      p("Selecteer een lening in de tabel en klik op de knop 'Start simulatie' om de aflostabel van de lening te bekijken. Bekijk ook zeker de grafieken onder het tabblad 'Grafiek'. Als je een vergelijking van de drie grafieken wil bekijken, ga dan naar 'vergelijk leningen'. Dit kan je terugvinden door op de drie streepjes te klikken bovenaan de pagina."),
+      h2("Zelf aan de slag"),
+      p("In de tab 'nieuwe lening' kan je zelf leningen aan deze tabel toevoegen. Alle informatie ingegeven in deze website wordt niet opgeslagen. Om je gegevens te bewaren, kan je je bankvoorstellen exporteren en later opnieuw inladen. (Opgepast: Als je de pagina ververst, worden al je gegevens gewist!)"),
       # Invoer simulator ----
       tabsetPanel(
         tabPanel(
           "Opgeslagen leningen",
           wellPanel(
+            p("In deze tabel vind je alle informatie over de leningen terug. Van links naar rechts vind je:"), 
+            HTML("<ul>
+<li>Het te lenen bedrag</li>
+<li>Het type lening: Vast of variabel</li>
+<li>Indien variabel hoeveel jaar tot herziening</li>
+<li>De rentevoet</li>
+<li>looptijd van de lening</li>
+<li>Eenmalige kosten van de lening, zoals de dossierkosten</li>
+<li>Maandelijkse kosten zijn de kosten van de rekeningen, bankkaarten en ook maandelijkse verzekeringen zoals bijvoorbeeld de schuldsaldoverzekering</li>
+<li>Jaarlijkse kosten zijn bijvoorbeeld de brandverzekering</li>
+<li>De inflatie. In België was deze 1,97 % en 2,20 % respectievelijk in 2016 en 2017</li>
+<li>Je vermogen bij de start van de lening (na de aankoop van je huis.)</li>
+<li>Je maandelijks inkomsten min de vaste kosten is het bedrag dat je overhoudt na het aftrekken van je vaste kosten zoals eten en elektriciteit van je maandelijkse loon. Dit is het bedrag dat je zal gebruiken om je lening af te betalen en de extra kosten te bekostigen. Het overschot van dit bedrag wordt gespaard en eventueel belegd.</li>
+<li>Hoeveel procent van je spaarpot je in beleggingen zal steken</li>
+<li>Hoeveel deze beleggingen zullen opbrengen. Er wordt aangenomen dat geld op de spaarrekening niets opbrengt!</li></ul>"),
+            br(),
+            br(),
             dataTableOutput("leningenDT"),
             fluidRow(
               column(
@@ -153,7 +176,8 @@ body <- dashboardBody(
                 br(),
                 dataTableOutput("lenInputDT"),
                 div(id = "lenSamError",
-                    p(em(HTML("<font color='red'>Gelieve een leninghoeveelheid in te geven.</font>"))))
+                    p(em(HTML("<font color='red'>Voeg een lening toe met de knop 'Voeg toe'. 
+                              Op deze manier kan je je lening opdelen in verschillende delen!</font>"))))
               ),
               column(
                 width = 6,
@@ -205,18 +229,22 @@ body <- dashboardBody(
                   id = "lenVermdiv",
                   textInput("lenVermStart", 
                             "Vermogen bij start ingang lening:", 
-                            placeholder = "20000"),
+                            placeholder = "5000"),
                   div(id = "lenVermStartError",
                       p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")))),
                   textInput("lenVermInk", 
-                            "Gespaard bedrag per maand:", 
-                            placeholder = "500"),
+                            "Beschikbaar maandelijks bedrag na vaste kosten:", 
+                            placeholder = "800"),
+                  p(paste0("Voorbeeld: Je verdient 1500 euro netto. Na je vaste kosten zoals electriciteit, eten ",
+                    "en andere diverse maandelijkse kosten, blijft er nog 800 euro over voor je lening en te sparen. ",
+                    "Als de gesimuleerde lening een afbetaling van 600 euro uitkomt, zal het de overige 200 euro ",
+                    "gerekend worden als spaargeld. Hieronder kan je nog specifieren of je dit bedrag belegt of niet.")),
                   div(id = "lenVermInkError",
                       p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")))),
                   textInput("lenVermBelPerc", 
-                            "Percentage van vermogen in beleggingen:", 
+                            "Percentage van gespaard vermogen in beleggingen:", 
                             value = 0,
-                            placeholder = "40"),
+                            placeholder = "45"),
                   div(id = "lenVermBelPercError",
                       p(em(HTML("<font color='red'>Gelieve een correct getal in te geven.</font>")))),
                   textInput("lenVermBelOpbrPerc", 
@@ -288,7 +316,7 @@ body <- dashboardBody(
                 checkboxInput("grafiekInflatie", "Inflatie inrekenen"),
                 sliderInput("grafiekInflatiePerc", "Inflatie percentage:", 
                             min = -10, max = 10, value = 2, step = 0.1),
-                checkboxInput("grafiekCumulatief", "Cumulatief")
+                checkboxInput("grafiekCumulatief", "Per maand")
               ),
               wellPanel(
                 plotOutput("grafiekPlot")
@@ -307,7 +335,12 @@ body <- dashboardBody(
     tabItem(
       tabName = "vergLen",
       h1("Vergelijk leningen"),
-      p("Op deze pagina worden al je ingegeven leningen naast elkaar gelegd en vergeleken."),
+      p("Op deze pagina worden al je ingegeven leningen naast elkaar gelegd en vergeleken. Wij vonden de grafiek die het vermogen weergeeft doorheen de jaren de meest doorslaggevende. Dit is namelijk het geld dat je in je handen overhoudt doorheen de jaren. Voor Tine lijkt in dat geval Bank 3 de beste keuze. Omdat ze in het begin meer afbetaalt, zal ze naar het einde van de 25 jaren veel kunnen sparen en uiteindelijk veel meer overhouden. Voor we deze colclusie kunnen trekken moeten we echter even stilstaan bij de aannames die bij de simulatie horen."),
+      h2("Belangrijke opmerkingen"),
+      p("De simulatie gaat er van uit dat het beschikbare bedrag er zal zijn doorheen de looptijd van de lening en dat het gespaarde geld nooit wordt aangesproken. We nemen zelfs aan dat je maandelijks bedrag meegroeit met de inflatie! Dit kan niet altijd het geval zijn, door ziekte, veranderen van werk, etc. kunnen maandelijkse inkomsten plots veranderen in goede of slechte zin. Ook kan het zijn dat het spaargeld wordt aangesproken voor een vakantie of dure aankoop. In onderstaande grafiek is het duidelijk dat Tine de eerste 15 jaar zeer weinig zal kunnen spenderen aan andere dingen dan aan de lening. Dit is een risico waar zeker aandacht aan gespendeerd moet worden. Om het risico te verkleinen zou ze nieuwe simulatie kunnen maken waarin het aandeel in de lening op 15 jaar kleiner is, wat het risico zou verkleinen."),
+      p("Een tweede aanname is dat het beleggingsopbrengstpercentage en de inflatie hetzelfde zal blijven gedurende de looptijd van de lening. Een slechte belegging kan hierdoor roet in het eten gooien. Ook hier is het aan te raden om een appel voor de dorst achter te houden om het risico te verkleinen."),
+      p("De variable rentevoeten worden aangenomen steeds naar het maximum te stijgen na de eerste herziening (banken noemen dit het 'worst-case scenario'). In de tijd van dit schrijven, in 2017, was dit de verwachting. In de vermogen grafiek van Tine zie je de aanpassing van de rentevoet in de 'knik' in de grafiek na drie jaar. (Deze is ook aanwezig in het voorstel van Bank 3, maar niet zo goed zichtbaar.) Het is onwaarschijnlijk, maar wel mogelijk dat de rentevoeten toch laag blijven, en Tine de volledige looptijd aan een lagere rentevoet terugbetaalt en dus beter uitkomt dan in de simulatie berekend werd."),
+      p("Een laatste aanname die de simulatie maakt is dat er geen vervroegde leningsafbetalingen gebeuren tijdens de looptijd. Vergeet niet dat je op eender welk moment een deel van je lening vervroegd kan aflossen. Soms kan het voordelig zijn je lening af te betalen."),
       wellPanel(
         dataTableOutput("vergLenInputDT"),
         br(),
@@ -319,36 +352,27 @@ body <- dashboardBody(
       div(
         id = "lenResultaat",
         wellPanel(
-          uiOutput("vergLenBeschrijving")
-        ),
-        tabsetPanel(
-          tabPanel(
-            "Tabel",
-            dataTableOutput("vergLenOutputDT"),
-            downloadButton(
-              "vergLenAflossingstabelExport",
-              "Exporteer vergelijkingstabel (.csv)"
-            )
-          ),
-          tabPanel(
-            "Grafiek",
-            wellPanel(
-              uiOutput("vergGrafiekKolommenUI"),
-              uiOutput("vergGrafiekStartDatumUI"), 
-              checkboxInput("vergGrafiekInflatie", "Inflatie inrekenen"),
-              sliderInput("vergGrafiekInflatiePerc", "Inflatie percentage:", 
-                          min = -10, max = 10, value = 2, step = 0.1),
-              checkboxInput("vergGrafiekCumulatief", "Cumulatief")
-            ),
-            wellPanel(
-              plotOutput("vergGrafiekPlot")
-            ),
-            dataTableOutput("vergGrafiekTabel"),
-            downloadButton(
-              "vergGrafiekExport",
-              "Exporteer grafiek data (.csv)"
-            )
+          dataTableOutput("vergLenOutputDT"),
+          downloadButton(
+            "vergLenAflossingstabelExport",
+            "Exporteer vergelijkingstabel (.csv)"
           )
+        ),
+        wellPanel(
+          uiOutput("vergGrafiekKolommenUI"),
+          uiOutput("vergGrafiekStartDatumUI"), 
+          checkboxInput("vergGrafiekInflatie", "Inflatie inrekenen"),
+          sliderInput("vergGrafiekInflatiePerc", "Inflatie percentage:", 
+                      min = -10, max = 10, value = 2, step = 0.1),
+          checkboxInput("vergGrafiekCumulatief", "Per maand")
+        ),
+        wellPanel(
+          plotOutput("vergGrafiekPlot")
+        ),
+        dataTableOutput("vergGrafiekTabel"),
+        downloadButton(
+          "vergGrafiekExport",
+          "Exporteer grafiek data (.csv)"
         )
       )
     ),
@@ -357,14 +381,14 @@ body <- dashboardBody(
       h1("Meer informatie over deze applicatie"),
       fluidPage(
         fluidRow(HTML(paste0(
-          "<p>Deze applicatie werd gebouwd in de zomer van 2017 door mij, Joris Van den Bossche, geïnspireerd door mijn eigen zoektocht naar een lening! Alle vragen of opmerkingen over deze applicatie zijn uiterst welkom. Contacteer mij via <a href=\"mailto:joris.bdbossche@gmail.com\">email</a> of via onderstaande kanalen.</p>",
-          "<p>Alle code van deze applicatie kan je terugvinden <a href=\"https://github.com/JorisVdBos/leningenvergelijker\">mijn github account</a>.</p>",
-          "<p>Mijn LinkedIn:</p>",
+          "<p>In de zomer van 2017 bouwde ik deze applicatie, geïnspireerd door mijn eigen zoektocht naar een lening. Alle vragen, aanbevelingen of opmerkingen over deze applicatie zijn uiterst welkom. Contacteer mij via <a href=\"mailto:joris.bdbossche@gmail.com\">mijn email</a> of via onderstaande kanalen.</p>",
+          "<p>Alle code van deze applicatie is terug te vinden op <a href=\"https://github.com/JorisVdBos/leningenvergelijker\">mijn github account</a>.</p>",
+          "<p>Mijn LinkedIn account:</p>",
           "<br>",
           "<script src=\"//platform.linkedin.com/in.js\" type=\"text/javascript\"></script>
           <script type=\"IN/MemberProfile\" data-id=\"https://www.linkedin.com/in/joris-van-den-bossche-8a12b943\" data-format=\"inline\" data-related=\"false\"></script>",
           "<br>",
-          "<p>Volg mij op Twitter:<br>
+          "<p>Volg mij op Twitter!<br>
           <a href=\"https://twitter.com/Joris_VdB_\" class=\"twitter-follow-button\" data-show-count=\"false\" data-size=\"large\">Follow @Joris_VdB_</a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script></p>
           "
         )))

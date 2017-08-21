@@ -232,15 +232,22 @@ shinyServer(function(input, output, session) {
   })
   
   toonOpgeslagenLeningen <- function(){
-    if(is.null(opgeslagenLeningen) || dim(opgeslagenLeningen)[1] == 0){
-      opgeslagenLeningen <- 
-        data.table(Lening ="Geen opgeslagen leningen gevonden!")
-    }
     
     output$leningenDT <- renderDataTable({
       output <- opgeslagenLeningen
-      if(sum(metrieken %in% colnames(output)) > 0)
-        output <- opgeslagenLeningen[, -c(metrieken), with = FALSE]
+      
+      if(is.null(output) || dim(output)[1] == 0){
+        output <- 
+          data.table(Lening ="Geen opgeslagen leningen gevonden!")
+      }
+      
+      if(dim(output)[1] > 17)
+        output <- opgeslagenLeningen[, 1:17]
+      
+      nietTonen <- c("Kosten_Bijhouden", "Inflatie_Inrekenen", "Vermogen_Bijhouden")
+      if(sum(nietTonen %in% colnames(opgeslagenLeningen)) > 0)
+        output <- opgeslagenLeningen[, -c(nietTonen[nietTonen %in% colnames(opgeslagenLeningen)]), with = FALSE]
+      
       names(output) <- mapNames(names(output))
       output
     },
@@ -254,10 +261,10 @@ shinyServer(function(input, output, session) {
     rownames = FALSE,
     selection = 'single')
     
-    # Testing:
-    # if(!is.null(opgeslagenLeningen) &&
-    #    dim(opgeslagenLeningen)[1] > 0)
-    #   write_feather(x = opgeslagenLeningen, path = "defaults/opgeslagenLeningenVoorbeelden.feather")
+    if(opslaanOpgeslagenLeningen && 
+       !is.null(opgeslagenLeningen) &&
+       dim(opgeslagenLeningen)[1] > 0)
+      write_feather(x = opgeslagenLeningen, path = "defaults/opgeslagenLeningenVoorbeelden.feather")
     toggle(id = "leningenVerwAlles2Div", condition = FALSE)
   }
   toonOpgeslagenLeningen()
@@ -750,7 +757,14 @@ shinyServer(function(input, output, session) {
   
     output$vergLenOutputDT <- renderDataTable({
       output <- opgeslagenLeningen[, c("Bank", metrieken), with = FALSE]
-      names(output) <- mapNames(names(output))
+      
+      banken <- output$Bank
+      output$Bank <- NULL
+      output <- t(output)
+      colnames(output) <- banken
+      
+      rownames(output) <- mapNames(rownames(output))
+      
       output
     },
     options=list(autoWidth = TRUE,
@@ -787,7 +801,10 @@ shinyServer(function(input, output, session) {
         opties <- opties[-grep("inflatie", opties)]
       opties <- opties[!opties %in% c("maand", "lening_open", "vermogenVerschil")]
       selectInput("vergGrafiekKolommen", "Plot volgende kolommen: ", 
-                  choices = mapNames(opties), multiple = FALSE, selected = mapNames(opties)[1])
+                  choices = mapNames(opties), multiple = FALSE, 
+                  selected = ifelse("vermogen" %in% opties, 
+                                    mapNames(opties)[which(opties == "vermogen")], 
+                                    1))
     })
     
     output$vergGrafiekStartDatumUI <- renderUI({
@@ -803,7 +820,17 @@ shinyServer(function(input, output, session) {
                    input$vergGrafiekInflatiePerc, input$vergGrafiekCumulatief), {
        if(is.null(input$vergGrafiekDatum))
          return(NULL)
-       
+        if(testing){              
+          opgeslagenAflosTabellen <- opgeslagenAflosTabellen
+          kolom <- unMapNames(input$vergGrafiekKolommen)
+          startDate <- input$vergGrafiekDatum
+          inflatie <- input$vergGrafiekInflatie
+          inflatiePerc <- input$vergGrafiekInflatiePerc
+          cumulatief <- input$vergGrafiekCumulatief
+          
+          save(opgeslagenAflosTabellen, kolom, startDate, inflatie, inflatiePerc, cumulatief, file = "test.RData")
+        }       
+                     
        leningVergelijkingPlot <<- vergLeningGrafiek(opgeslagenAflosTabellen = opgeslagenAflosTabellen, 
                                   kolom = unMapNames(input$vergGrafiekKolommen),
                                   startDate = input$vergGrafiekDatum, 
