@@ -30,8 +30,11 @@ body <- dashboardBody(
     tabItem(
       tabName = "inleiding",
       h1("Welkom!"),
-      p("Welkom op mijn applicatie! Als je hier bent, wil dat zeggen dat je een lening wil aangaan bij de bank. Net als jij, wou ik de beste lening op de markt te pakken krijgen en samen met mijn partner hebben we verschillende banken afgeschuimd naar informatie. Om de leningen van de verschillende banken te vergelijken, begonnen wij een excelbestand waar we alle leningvoorstellen verzamelden. Zelfs met enkele excel truukjes kregen we moeilijk vat op de waarde van de verschillende voorstellen en moesten we toch nog vaak teruggrijpen naar de aflostabellen van de banken. Daarom schreef ik voor mezelf en mijn partner een applicatie in de computertaal 'R' die leningen simuleerde. Zo kon ik ook vragen beantwoorden in verband met inflatie, verzekeringskosten en beleggen."),
-      p("Om te beginnen, ga naar het tabblad 'Simuleer lening' om leningen toe te voegen en aflostabellen te simuleren. Om de verschillende leningen naast elkaar te vergelijken, ga naar het tabblad 'Vergelijk leningen'. Om meer over deze applicatie te weten te komen, ga naar het tabblad 'Meer informatie'. Veel succes met de zoektocht naar je perfecte lening!")
+      p("Welkom op mijn applicatie! Als je hier bent, wil dat zeggen dat je een lening wil aangaan bij de bank. Net als jij, wou ik de beste lening op de markt te pakken krijgen en samen met mijn partner klopte ik aan bij verschillende banken voor informatie. Om de verschillende leningen en banken onderling te vergelijken, maakten we een excelbestand met alle leningvoorstellen. We merkten dat zelfs met enkele excel truukjes we moeilijk vat kregen op de waarde van de verschillende voorstellen en we vaak teruggrepen naar de aflostabellen van de banken. Daarom maakte ik een leningsimulator in de computertaal 'R'. Zo konden we de leningen vergelijken hoe we het zelf wilden en begon ik ook vragen te beantwoorden in verband met inflatie, verzekeringskosten en beleggen. Ondertussen hebben we een lening afgesloten, en kwam het idee om mijn code in een applicatie te gieten, zodat andere mensen er gebruik van kunnen maken!."),
+      p("Om te beginnen, ga naar het tabblad 'Simuleer lening' om leningen toe te voegen en aflostabellen te simuleren. Om de verschillende leningen naast elkaar te vergelijken, ga naar het tabblad 'Vergelijk leningen'. Om meer over deze applicatie te weten te komen, ga naar het tabblad 'Meer informatie'. Veel succes met de zoektocht naar je perfecte lening!"),
+      h2("Privacy"),
+      p("Geen enkele informatie ingegeven in deze applicatie-website wordt ergens opgeslagen. Hij maakt geen gebruik van cookies of iets dergelijks. Om je gegevens te bewaren, kan je je bankvoorstellen exporteren in een '.feather' bestand en opslaan op je computer. Later kan je dit bestand opnieuw inladen om verder te werken. Opgepast: Dit betekent ook dat als je de pagina ververst, alle ingevoerde gegevens worden gewist!"),
+      p("De code van deze applicatie is volledig openbaar en terug te vinden op <a href=\"https://github.com/JorisVdBos/leningenvergelijker\">mijn github account</a>")
     ),
     # Lening simulatie ----
     tabItem(
@@ -44,7 +47,7 @@ body <- dashboardBody(
       p("In bank 1 wordt haar een lening op vaste rentevoet aangeboden aan 2,5%. In de bank 2 raden ze een lening aan 1,9% aan op variabele rentevoet, met herziening om de drie jaar. Hun verzekeringen zijn goedkoper dan bank 1. Bank 3 is duurder dan de andere twee banken, maar zij hebben lagere dossierkosten. Zij raden een gecombineerde lening aan, van 100.000 euro aan 2,5% vast over 25 jaar en 50.000 euro variabel aan 1,9%, herzien om de drie jaar over 15 jaar."),
       p("Selecteer een lening in de tabel en klik op de knop 'Start simulatie' om de aflostabel van de lening te bekijken. Bekijk ook zeker de grafieken onder het tabblad 'Grafiek'. Als je een vergelijking van de drie grafieken wil bekijken, ga dan naar 'vergelijk leningen'. Dit kan je terugvinden door op de drie streepjes te klikken bovenaan de pagina."),
       h2("Zelf aan de slag"),
-      p("In de tab 'nieuwe lening' kan je zelf leningen aan deze tabel toevoegen. Alle informatie ingegeven in deze website wordt niet opgeslagen. Om je gegevens te bewaren, kan je je bankvoorstellen exporteren en later opnieuw inladen. (Opgepast: Als je de pagina ververst, worden al je gegevens gewist!)"),
+      p("In de tab 'nieuwe lening' kan je zelf leningen aan deze tabel toevoegen."),
       # Invoer simulator ----
       tabsetPanel(
         tabPanel(
@@ -79,24 +82,44 @@ body <- dashboardBody(
                 actionButton(
                   "leningenVerw",
                   "Verwijder geselecteerde lening"
-                ),
-                br(),
-                br(),
-                div(id = "leningenVerwAllesDiv",
-                   actionButton(
-                     "leningenVerwAlles",
-                     "Verwijder alle opgeslagen leningen")
-                ),
-                div(id = "leningenVerwAlles2Div",
-                   actionButton(
-                     "leningenVerwAlles2",
-                     "Ben je zeker?",
-                     styleclass = "danger")
                 )
               ),
               column(
                 width = 4,
                 align = "left",
+                br(),
+                div(id = "leningenVerwAllesDiv",
+                    actionButton(
+                      "leningenVerwAlles",
+                      "Verwijder alle opgeslagen leningen")
+                ),
+                div(id = "leningenVerwAlles2Div",
+                    actionButton(
+                      "leningenVerwAlles2",
+                      "Ben je zeker?",
+                      styleclass = "danger")
+                )
+              )
+            ),
+            br(),
+            br(),
+            p("Sla deze tabel op, zodat je later verder kan werken:"),
+            fluidRow(
+              column(
+                width = 4,
+                ""
+              ),
+              column(
+                width = 4,
+                br(),
+                downloadButton(
+                  "leningenExp",
+                  "Exporteer tabel"
+                )
+              ),
+              column(
+                width = 4,
+                br(),
                 fileInput(
                   "leningenImp",
                   "Importeer tabel",
@@ -104,11 +127,7 @@ body <- dashboardBody(
                   accept = "RData"
                 ),
                 div(id = "leningenImpError",
-                    p(em(HTML("<font color='red'>Gelieve een naam in te voeren.</font>")))),
-                downloadButton(
-                  "leningenExp",
-                  "Exporteer tabel"
-                )
+                    p(em(HTML("<font color='red'>Gelieve een naam in te voeren.</font>"))))
               )
             )
           ),
@@ -390,7 +409,7 @@ body <- dashboardBody(
       fluidPage(
         fluidRow(HTML(paste0(
           "<p>In de zomer van 2017 bouwde ik deze applicatie, geïnspireerd door mijn eigen zoektocht naar een lening. Alle vragen, aanbevelingen of opmerkingen over deze applicatie zijn uiterst welkom. Contacteer mij via <a href=\"mailto:joris.bdbossche@gmail.com\">mijn email</a> of via onderstaande kanalen.</p>",
-          "<p>Alle code van deze applicatie is terug te vinden op <a href=\"https://github.com/JorisVdBos/leningenvergelijker\">mijn github account</a>.</p>",
+          "<p>De code van deze applicatie is volledig openbaar en terug te vinden op <a href=\"https://github.com/JorisVdBos/leningenvergelijker\">mijn github account</a>.</p>",
           "<p>Mijn LinkedIn account:</p>",
           "<br>",
           "<script src=\"//platform.linkedin.com/in.js\" type=\"text/javascript\"></script>
